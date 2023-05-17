@@ -1,0 +1,16 @@
+
+function enemies:handleChainLightning(x, y, range, damage)
+    local enemiesHit = {}
+    table.insert(player.lightningStrikes, {x = x, y = y, life = 0.2})  -- Add this line
+    for _, enemy in ipairs(self.list) do
+        local dx = enemy.x - x
+        local dy = enemy.y - y
+        local distance = math.sqrt(dx * dx + dy * dy)
+
+        if distance <= range and not enemiesHit[enemy] then
+            enemy:takeDamage(damage)
+            enemiesHit[enemy] = true
+            table.insert(player.lightningStrikes, {x = enemy.x, y = enemy.y, life = 0.2})  -- Add this line
+        end
+    end
+end
