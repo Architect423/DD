@@ -4,6 +4,7 @@ local world = require('world')
 local player = require('player')
 local enemies = require('enemies')
 local bullets = require('basic_attacks.bullets')
+local visual_effects = require('visual_effects')
 
 local roundTime = 60
 local roundTimer = roundTime
@@ -20,9 +21,9 @@ function gamestate:load()
 
     -- Define classes
     classes = {
-    {name = 'Wizard', color = {0, 0, 1}},      -- Blue
-    {name = 'Barbarian', color = {1, 0, 0}},   -- Red
-    {name = 'Ranger', color = {0, 1, 0}}       -- Green
+    {name = 'Wizard', color = {0, 0, 1}, basic_attack = 'lightningStrike'},      -- Blue
+    {name = 'Barbarian', color = {1, 0, 0}, basic_attack = 'axeSwing'},   -- Red
+    {name = 'Ranger', color = {0, 1, 0}, basic_attack = 'bulletShoot'}       -- Green
 	}
 
     selectedClassIndex = 1
@@ -44,6 +45,7 @@ function gamestate:confirmClassSelection()
     local selectedClass = classes[selectedClassIndex]
     player.class = selectedClass.name
     player.color = selectedClass.color  -- Set the player color
+	player.currentAttack = selectedClass.basic_attack
     self.currentState = 'play'
     print("Selected Class: " .. player.class)
     print("Selected Class Color: " .. selectedClass.color[1] .. ", " .. selectedClass.color[2] .. ", " .. selectedClass.color[3])
@@ -60,26 +62,9 @@ function gamestate:update(dt)
         player:update(dt)
         enemies:update(dt)
         bullets:update(dt)
+		visual_effects:update(dt)
         if player.health <= 0 then
             self.currentState = 'gameover'
-        end
-		
-		-- Class-specific attack logic
-        if player.class == "Wizard" then
-            if love.mouse.isDown(1) and player.attackCooldown <= 0 then
-                player:castChainLightning()
-                player.attackCooldown = 1  -- set the cooldown time (in seconds)
-            end
-        elseif player.class == "Barbarian" then
-            if love.mouse.isDown(1) and player.attackCooldown <= 0 then
-                player:performAxeSwing()
-                player.attackCooldown = 1  -- set the cooldown time (in seconds)
-            end
-        elseif player.class == "Ranger" then
-            if love.mouse.isDown(1) and player.attackCooldown <= 0 then
-                player:shootArrow()
-                player.attackCooldown = 0.5  -- set the cooldown time (in seconds)
-            end
         end
     end
 	
@@ -124,6 +109,7 @@ function gamestate:draw()
         player:draw()
         enemies:draw()
         bullets:draw()
+		visual_effects:draw()
         love.graphics.print("Time: " .. math.ceil(roundTimer), love.graphics.getWidth() - 100, 10)
 		if player.class == "Wizard" then
             love.graphics.print("Left-click to cast Chain Lightning", 10, 30)
