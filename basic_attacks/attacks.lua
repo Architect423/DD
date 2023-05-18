@@ -1,6 +1,6 @@
 -- attacks.lua
 local visual_effects = require('visual_effects')
-
+local projectiles = require('projectiles')
 local attacks = {
     axeSwing = {
         cooldown = 2,  -- Cooldown in seconds
@@ -55,7 +55,6 @@ local attacks = {
 
 			-- Damage the hit enemy and chain to nearby enemies
 			if hitEnemy then
-				print('U STRUCK')
 				hitEnemy:takeDamage(self.damage)
 				visual_effects:create('lightningStrike', hitEnemy.x, hitEnemy.y, { timer = 0.2, range = self.range, hit = true }, x, y)			
 				visual_effects:create('arcRange', hitEnemy.x, hitEnemy.y, { timer = 0.2, range = self.chainRadius }, x, y)  -- pass x and y (player position)
@@ -79,14 +78,23 @@ local attacks = {
 			end
 		end,
 	},
+	arrowShoot = {
+		cooldown = 1,  -- Cooldown in seconds
+		range = 500,  -- Travel range of the arrow
+		damage = 10,  -- Damage done by the attack
+		projectileSpeed = 300,  -- Speed of the projectile
+		effect = function(self, _, x, y)
+			-- Calculate arrow direction
+			print('bleh')
+			local dirX, dirY = love.mouse.getX() - x, love.mouse.getY() - y
+			local length = math.sqrt(dirX * dirX + dirY * dirY)
+			dirX, dirY = dirX / length, dirY / length  -- normalize the direction vector
+			-- Create a new projectile
+			projectiles:create('arrowShoot', x, y, dirX, dirY, self.range, self.damage, self.projectileSpeed)
+			visual_effects:create('arrowShoot', x, y, { dirX = dirX, dirY = dirY, speed = self.projectileSpeed })
+		end,
+	},
 
-
-
-    arrowShoot = {
-
-    }
-
-    -- ...
 }
 
 function lineBoxCollision(x1, y1, x2, y2, box)

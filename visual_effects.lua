@@ -1,6 +1,7 @@
 -- visual_effects.lua
 local visual_effects = {}
 visual_effects.list = {}
+local projectiles = require 'projectiles'
 
 
 -- add two parameters (px, py) to represent player's position
@@ -51,6 +52,13 @@ function visual_effects:draw()
             love.graphics.setColor(1, 0, 0, 0.5)  -- draw in half-transparent red
             love.graphics.circle('line', effect.x, effect.y, effect.range)
             love.graphics.setColor(1, 1, 1)
+        end
+    end
+	
+	for _, projectile in ipairs(projectiles.list) do
+        if projectile.type == 'arrowShoot' then
+            love.graphics.setColor(1, 1, 0)  -- Yellow color
+            love.graphics.circle('fill', projectile.x, projectile.y, 5)  -- Draw a small circle at the projectile's position
         end
     end
 end

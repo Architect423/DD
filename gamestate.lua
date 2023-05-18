@@ -5,7 +5,7 @@ local player = require('player')
 local enemies = require('enemies')
 local bullets = require('basic_attacks.bullets')
 local visual_effects = require('visual_effects')
-
+local projectiles = require('projectiles')
 local roundTime = 60
 local roundTimer = roundTime
 
@@ -23,7 +23,7 @@ function gamestate:load()
     classes = {
     {name = 'Wizard', color = {0, 0, 1}, basic_attack = 'lightningStrike'},      -- Blue
     {name = 'Barbarian', color = {1, 0, 0}, basic_attack = 'axeSwing'},   -- Red
-    {name = 'Ranger', color = {0, 1, 0}, basic_attack = 'bulletShoot'}       -- Green
+    {name = 'Ranger', color = {0, 1, 0}, basic_attack = 'arrowShoot'}       -- Green
 	}
 
     selectedClassIndex = 1
@@ -61,7 +61,7 @@ function gamestate:update(dt)
         end
         player:update(dt)
         enemies:update(dt)
-        bullets:update(dt)
+        projectiles:update(dt, enemies)
 		visual_effects:update(dt)
         if player.health <= 0 then
             self.currentState = 'gameover'
@@ -110,6 +110,7 @@ function gamestate:draw()
         enemies:draw()
         bullets:draw()
 		visual_effects:draw()
+		love.graphics.setColor(1, 1, 1)
         love.graphics.print("Time: " .. math.ceil(roundTimer), love.graphics.getWidth() - 100, 10)
 		if player.class == "Wizard" then
             love.graphics.print("Left-click to cast Chain Lightning", 10, 30)
