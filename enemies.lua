@@ -1,7 +1,10 @@
 -- enemies.lua
 local player = require('player')
 local attacks = require('basic_attacks.attacks')
+local enemy_behaviors = require('enemy_behaviors')
+local world = require('world')
 local enemies = {}
+local LootDrop = require('loot')
 enemies.list = {}
 
 function enemies:load()
@@ -11,11 +14,28 @@ function enemies:load()
     self.health = 20
     self.speed = 50
     self.spawnDistance = 200
+	self.damage = 10
+	-- Define enemy scaling properties
+    self.healthScaling = 1000 -- Increase enemy health by 10% per spawn
+    self.damageScaling = 1000 -- Increase enemy damage by 10% per spawn
+    self.speedScaling = 1000 -- Increase enemy speed by 10% per spawn
 	
     player.attackEvent:subscribe(function(attackName, x, y)
         local attack = attacks[attackName]
         if attack then
             self:handleAttack(attack, x, y)
+        end
+    end)
+	
+	player.enterTownEvent:subscribe(function(x, y)
+        for i, enemy in ipairs(self.list) do
+            enemy.state = 'idle'
+        end
+    end)
+	
+	player.exitTownEvent:subscribe(function(x, y)
+        for i, enemy in ipairs(self.list) do
+            enemy.state = 'pursuit'
         end
     end)
 end
@@ -28,43 +48,60 @@ function enemies:update(dt)
         self.spawnTimer = 0
         self:spawn()
     end
-
-    for i, enemy in ipairs(self.list) do
-        -- Move enemy towards player
-        local dx = player.x - enemy.x
-        local dy = player.y - enemy.y
-        local distance = math.sqrt(dx * dx + dy * dy)
-
-        enemy.x = enemy.x + dx / distance * self.speed * dt
-        enemy.y = enemy.y + dy / distance * self.speed * dt
-
-        -- Check collision with player
-        if distance < player.size / 2 + self.size / 2 then
-            player:takeDamage(10)
-        end
+	
+	self.healthScaling = self.healthScaling + 1 -- Increase enemy health by 10% per spawn
+    self.damageScaling = self.damageScaling + 1 -- Increase enemy damage by 10% per spawn
+    self.speedScaling = self.speedScaling + 1 -- Increase enemy speed by 10% per spawn
+	if player.inTown == 0 then
+		for i, enemy in ipairs(self.list) do
+			enemy_behaviors:pursuit(enemy, player, dt)  -- Apply pursuit behavior
+			end
     end
 	
     -- Remove dead enemies
-    for i = #self.list, 1, -1 do
-        if self.list[i].health <= 0 then
-            table.remove(self.list, i)
-        end
-    end
+   -- Remove dead enemies
+	for i = #self.list, 1, -1 do
+		if self.list[i].health <= 0 then
+			-- Generate a loot drop
+			local lootDrop = LootDrop:new(self.list[i].x, self.list[i].y)
+			-- Insert it into the global loot drops table
+			table.insert(lootDrops, lootDrop)
+			-- Remove the enemy from the list
+			table.remove(self.list, i)
+		end
+	end
+
 end
 
 
 function enemies:spawn()
-    local x, y
-    repeat
-        x = love.math.random(0, love.graphics.getWidth())
-        y = love.math.random(0, love.graphics.getHeight())
-    until (x - player.x)^2 + (y - player.y)^2 >= (self.size + player.size)^2
-    local enemy = {x = x, y = y, health = self.health}
+    -- Generate a random distance and angle
+    local distance = love.math.random(self.spawnDistance, self.spawnDistance + 100)  -- Distance will be between spawnDistance and spawnDistance + 100
+    local angle = love.math.random() * 2 * math.pi  -- Angle will be between 0 and 2*pi (full circle)
+
+    -- Convert polar to Cartesian coordinates
+    local x = player.x + distance * math.cos(angle)
+    local y = player.y + distance * math.sin(angle)
+	x = math.max(0, math.min(x, world.mapWidth))
+	y = math.max(0, math.min(y, world.mapHeight))
+
+
+    -- Create enemy
+    local enemy = {
+        x = x,
+        y = y,
+		state = 'pursuit',
+        size = self.size,
+        health = self.health * (self.healthScaling / 1000),
+        damage = self.damage * (self.damageScaling / 1000),
+        speed = self.speed * (self.speedScaling / 1000)
+    }
     function enemy:takeDamage(amount)
         self.health = self.health - amount
     end
     table.insert(self.list, enemy)
 end
+
 
 
 function enemies:draw()

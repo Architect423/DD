@@ -6,8 +6,11 @@ local enemies = require('enemies')
 local bullets = require('basic_attacks.bullets')
 local visual_effects = require('visual_effects')
 local projectiles = require('projectiles')
-local roundTime = 60
+local roundTime = 1
 local roundTimer = roundTime
+local ui = require('ui')
+local camera = require('camera')
+local loot = require('loot')
 
 function gamestate:load()
     world:load()
@@ -18,7 +21,7 @@ function gamestate:load()
 	
 	-- Add game state for class selection
     self.currentState = 'menu'
-
+	lootDrops = {}
     -- Define classes
     classes = {
     {name = 'Wizard', color = {0, 0, 1}, basic_attack = 'lightningStrike'},      -- Blue
@@ -54,12 +57,17 @@ end
 function gamestate:update(dt)
     keyTimer = keyTimer + dt
     if self.currentState == 'play' then
-        roundTimer = roundTimer - dt
-        if roundTimer <= 0 then
+        roundTimer = roundTimer + dt
+        if player.health <= 0 then
             self.currentState = 'gameover'
-            roundTimer = roundTime
         end
         player:update(dt)
+		camera.x = player.x - love.graphics.getWidth() / 2
+		camera.y = player.y - love.graphics.getHeight() / 2
+
+				-- Constrain the camera to the world boundaries
+		camera.x = math.max(0, math.min(camera.x, world.mapWidth * world.tileSize - love.graphics.getWidth()))
+		camera.y = math.max(0, math.min(camera.y, world.mapHeight * world.tileSize - love.graphics.getHeight()))
         enemies:update(dt)
         projectiles:update(dt, enemies)
 		visual_effects:update(dt)
@@ -104,37 +112,32 @@ end
 
 function gamestate:draw()
     if self.currentState == 'play' then
+		love.graphics.push()
+		love.graphics.translate(-camera.x, -camera.y)
         -- code for play state draw
 		world:draw()
         player:draw()
         enemies:draw()
         bullets:draw()
+		for _, lootDrop in pairs(lootDrops) do
+			lootDrop:draw()
+		end
+		love.graphics.setColor(0, 0, 0)
 		visual_effects:draw()
-		love.graphics.setColor(1, 1, 1)
-        love.graphics.print("Time: " .. math.ceil(roundTimer), love.graphics.getWidth() - 100, 10)
-		if player.class == "Wizard" then
-            love.graphics.print("Left-click to cast Chain Lightning", 10, 30)
-        elseif player.class == "Barbarian" then
-            love.graphics.print("Left-click to perform Axe Swing", 10, 30)
-        elseif player.class == "Ranger" then
-            love.graphics.print("Left-click to shoot Arrow", 10, 30)
-        end
+		ui:debug()
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.pop()
+		ui:drawInGameUI(player, roundTimer)
+		ui:drawHealthBar(player)
+
     elseif self.currentState == 'menu' then
         -- code for menu state draw
-		love.graphics.printf("Press Enter to Start Game or Esc to Exit", love.graphics.getWidth() / 2 - 50, love.graphics.getHeight() / 2, 100, 'center')
+		ui:drawMenu()
     elseif self.currentState == 'classSelect' then
-        -- code for class select state draw
-		love.graphics.print('Select your class:', 10, 10)
-        for i, class in ipairs(classes) do
-            love.graphics.setColor(class.color)
-            love.graphics.print(class.name, 10, 30 * i + 10)
-            if i == selectedClassIndex then
-                love.graphics.print('<<', 200, 30 * i + 10)
-            end
-		end
+        ui:drawClassSelection(classes, selectedClassIndex)
     elseif self.currentState == 'gameover' then
         -- code for gameover state draw
-		love.graphics.printf("Game Over! Press Enter to Restart or Esc to go to Main Menu", love.graphics.getWidth() / 2 - 100, love.graphics.getHeight() / 2, 200, 'center')
+		ui:drawGameOver()
 	end
 end
 

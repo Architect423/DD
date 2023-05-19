@@ -30,7 +30,7 @@ local attacks = {
 			local hitEnemy = nil
 			local minDistance = self.range
 			-- Calculate line end point
-			local dirX, dirY = love.mouse.getX() - x, love.mouse.getY() - y
+			local dirX, dirY = (love.mouse.getX() + camera.x) - x, (love.mouse.getY() + camera.y) - y
 			local length = math.sqrt(dirX * dirX + dirY * dirY)
 			dirX, dirY = dirX / length, dirY / length  -- normalize the direction vector
 			local endX, endY = x + dirX * self.range, y + dirY * self.range
@@ -84,9 +84,8 @@ local attacks = {
 		damage = 10,  -- Damage done by the attack
 		projectileSpeed = 300,  -- Speed of the projectile
 		effect = function(self, _, x, y)
-			-- Calculate arrow direction
-			print('bleh')
-			local dirX, dirY = love.mouse.getX() - x, love.mouse.getY() - y
+			-- Calculate arrow direction considering camera offset
+			local dirX, dirY = (love.mouse.getX() + camera.x) - x, (love.mouse.getY() + camera.y) - y
 			local length = math.sqrt(dirX * dirX + dirY * dirY)
 			dirX, dirY = dirX / length, dirY / length  -- normalize the direction vector
 			-- Create a new projectile
@@ -94,6 +93,7 @@ local attacks = {
 			visual_effects:create('arrowShoot', x, y, { dirX = dirX, dirY = dirY, speed = self.projectileSpeed })
 		end,
 	},
+
 
 }
 
