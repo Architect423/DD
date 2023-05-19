@@ -20,6 +20,17 @@ function enemies:load()
     self.damageScaling = 1000 -- Increase enemy damage by 10% per spawn
     self.speedScaling = 1000 -- Increase enemy speed by 10% per spawn
 	
+    self.current_frame = 1
+    self.animation_speed = 1
+    self.scale = 2
+	self.animations = {
+            walking = {}
+        }
+	self.current_animation = self.animations.walking
+	for i = 0, 3 do
+        enemies.animations.walking[i] = love.graphics.newImage("orc/run/orc_warrior_run_anim_f" .. i .. ".png")
+    end
+	
     player.attackEvent:subscribe(function(attackName, x, y)
         local attack = attacks[attackName]
         if attack then
@@ -58,6 +69,12 @@ function enemies:update(dt)
 			enemy_behaviors:pursuit(enemy, player, dt)  -- Apply pursuit behavior
 			end
     end
+	
+	self.current_frame = self.current_frame + self.animation_speed * dt
+    if self.current_frame > #self.current_animation then
+        self.current_frame = 1
+    end
+	
     -- Remove dead enemies
    -- Remove dead enemies
 	for i = #self.list, 1, -1 do
@@ -108,8 +125,12 @@ function enemies:draw()
     love.graphics.setColor(1, 0, 0)
     for i, enemy in ipairs(self.list) do
         love.graphics.rectangle('fill', enemy.x - self.size / 2, enemy.y - self.size / 2, self.size, self.size)
+		local scale = 2
+		love.graphics.draw(self.current_animation[math.floor(self.current_frame)], enemy.x - (self.size * scale) / 2, enemy.y - (self.size * scale) / 2, 0, scale, scale)
     end
     love.graphics.setColor(1, 1, 1)
+	-- draw current frame
+	
 end
 
 function enemies:handleAttack(attack, x, y)

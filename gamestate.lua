@@ -115,6 +115,12 @@ function gamestate:update(dt)
     end
 end
 
+shopItems = {
+    {name = "Sword", price = 100},
+    {name = "Shield", price = 150},
+    {name = "Potion", price = 50}
+}
+
 function gamestate:draw()
     if self.currentState == 'play' then
 		love.graphics.push()
@@ -125,6 +131,10 @@ function gamestate:draw()
         enemies:draw()
         bullets:draw()
 		npc:draw()
+		
+		if npc.isShopOpen then  -- add this condition
+			ui:drawShop(npc, shopItems)
+        end
 
 		for _, lootDrop in pairs(lootDrops) do
 			lootDrop:draw()
@@ -136,6 +146,7 @@ function gamestate:draw()
 		love.graphics.pop()
 		ui:drawInGameUI(player, roundTimer)
 		ui:drawHealthBar(player)
+
 
     elseif self.currentState == 'menu' then
         -- code for menu state draw

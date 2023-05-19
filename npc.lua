@@ -1,7 +1,7 @@
 local Event = require('events')
 local world = require('world')
 local town = require('town')
-
+local ui = require('ui')
 local NPC = {}
 NPC.__index = NPC
 
@@ -11,11 +11,7 @@ function NPC:new(x, y, sprite)
         y = y,
         sprite = sprite,
         size = 32,
-        inTown = false,
-        shopMenuOpen = false,
-        interactionEvent = Event.new(),
-        enterTownEvent = Event.new(),
-        exitTownEvent = Event.new()
+		isShopOpen = false
     }
 
     setmetatable(npc, self)
@@ -23,13 +19,14 @@ function NPC:new(x, y, sprite)
 end
 
 function NPC:update(dt)
-    -- Collision logic
-    if self.x >= town.x1 and self.y >= town.y1 and self.x <= town.x2 and self.y <= town.y2 then
-        self.enterTownEvent:emit(self.x, self.y)
-        self.inTown = true
+     -- Calculate distance to player
+    local distToPlayer = math.sqrt((player.x - self.x)^2 + (player.y - self.y)^2)
+
+      -- Check if player is within 100 units and if "e" is pressed
+    if distToPlayer <= 100 and love.keyboard.isDown("e") then
+        self.isShopOpen = true
     else
-        self.exitTownEvent:emit(self.x, self.y)
-        self.inTown = false
+        self.isShopOpen = false
     end
 end
 

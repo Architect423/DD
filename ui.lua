@@ -39,7 +39,7 @@ end
 
 function ui:debug()
     local gridInterval = 5  -- Adjust this value to change the frequency of grid labeling
-
+	
 	for x = 1, world.mapWidth do
         for y = 1, world.mapHeight do
             local tile = world.tiles[world.map[x][y]] 
@@ -65,5 +65,42 @@ function ui:drawLootCount(player)
         i = i + 1
     end
 end
+
+function ui:drawShop(npc, shopItems)
+    -- List shop items
+    -- Calculate the shop's position to be next to the NPC
+	love.graphics.setColor(1, 1, 1)
+    local shopX = npc.x + npc.size
+    local shopY = npc.y
+	print(shopX)
+	print(shopY)
+	print(npc.x)
+	print(npc.y)
+    -- List shop items
+    for i, item in ipairs(shopItems) do
+        local y = shopY + 50 * i
+        love.graphics.print(item.name .. " - " .. item.price .. " gold", shopX, y)
+
+        -- Draw a "Buy" button for each item
+        love.graphics.rectangle('line', shopX + 200, y, 50, 20) -- Draw button outline
+        love.graphics.printf("Buy", shopX + 200, y, 50, 'center')
+
+        -- Check if the player clicks the "Buy" button
+        if love.mouse.isDown(1) then
+            local mouseX, mouseY = love.mouse.getPosition()
+            if mouseX >= shopX + 200 and mouseX <= shopX + 250 and mouseY >= y and mouseY <= y + 20 then
+                -- Buy the item if the player has enough gold
+                if player.gold >= item.price then
+                    player.gold = player.gold - item.price
+                    table.insert(player.inventory, item)
+                    print("You bought " .. item.name)
+                else
+                    print("Not enough gold")
+                end
+            end
+        end
+    end
+end
+
 
 return ui
