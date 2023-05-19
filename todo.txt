@@ -1,0 +1,11 @@
+Create a Player class: This class will encapsulate all the player's behaviors. It should have methods to handle movement, collision, attacks, and any other behavior specific to the player. This way, any changes to the player's implementation won't directly affect the rest of the game.
+
+Use the Entity-Component-System (ECS) pattern: In an ECS, each game object (like the player, enemies, and loot drops) is an Entity. Components are data containers that you attach to Entities to give them properties (like position, health, sprite information), and Systems are the logic that operates on Entities with specific Components.
+
+Standardize your collision detection: All your game entities should have a standard way of handling collisions. For example, they could all have a method called checkCollision that takes another entity as a parameter and returns true if the two entities are colliding.
+
+Abstract your drawing code: Have a standard way of drawing all your entities. This could be a method in each entity's class or a Drawing system in an ECS. If you decide to change how your entities are drawn in the future (e.g. changing from sprites to models), you only need to change this one piece of code.
+
+Decouple your logic and rendering code: Try to separate your game's logic (like movement and collision detection) from rendering code (like drawing sprites). This allows you to change one without affecting the other.
+
+Implement a level of indirection for sprite size: You could create a separate variable for your collision detection size and your sprite size. You could then create a function that calculates the collision size based on the sprite size. This way, if your sprite size changes, your collision size will automatically adjust accordingly.

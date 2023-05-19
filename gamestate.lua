@@ -1,7 +1,7 @@
 --gamestate.lua
 local gamestate = {}
 local world = require('world')
-local player = require('player')
+local Player = require('player')
 local enemies = require('enemies')
 local bullets = require('basic_attacks.bullets')
 local visual_effects = require('visual_effects')
@@ -11,11 +11,15 @@ local roundTimer = roundTime
 local ui = require('ui')
 local camera = require('camera')
 local loot = require('loot')
+local NPC = require('NPC')
+
+local npc
 
 function gamestate:load()
     world:load()
-    player:load()
+    _G.player = Player:new() 
     enemies:load()
+	npc = NPC:new(100*32, 100*32, love.graphics.newImage("npc.png"))
 	bullets:load()
 
 	
@@ -70,6 +74,7 @@ function gamestate:update(dt)
 		camera.y = math.max(0, math.min(camera.y, world.mapHeight * world.tileSize - love.graphics.getHeight()))
         enemies:update(dt)
         projectiles:update(dt, enemies)
+		npc:update(dt)
 		visual_effects:update(dt)
         if player.health <= 0 then
             self.currentState = 'gameover'
@@ -119,6 +124,8 @@ function gamestate:draw()
         player:draw()
         enemies:draw()
         bullets:draw()
+		npc:draw()
+
 		for _, lootDrop in pairs(lootDrops) do
 			lootDrop:draw()
 		end

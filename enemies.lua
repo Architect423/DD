@@ -1,5 +1,5 @@
 -- enemies.lua
-local player = require('player')
+
 local attacks = require('basic_attacks.attacks')
 local enemy_behaviors = require('enemy_behaviors')
 local world = require('world')
@@ -49,15 +49,15 @@ function enemies:update(dt)
         self:spawn()
     end
 	
-	self.healthScaling = self.healthScaling + 1 -- Increase enemy health by 10% per spawn
-    self.damageScaling = self.damageScaling + 1 -- Increase enemy damage by 10% per spawn
+	self.healthScaling = self.healthScaling + .1 -- Increase enemy health by 10% per spawn
+    self.damageScaling = self.damageScaling + .1 -- Increase enemy damage by 10% per spawn
     self.speedScaling = self.speedScaling + 1 -- Increase enemy speed by 10% per spawn
-	if player.inTown == 0 then
+	if player.inTown == false then
 		for i, enemy in ipairs(self.list) do
+
 			enemy_behaviors:pursuit(enemy, player, dt)  -- Apply pursuit behavior
 			end
     end
-	
     -- Remove dead enemies
    -- Remove dead enemies
 	for i = #self.list, 1, -1 do

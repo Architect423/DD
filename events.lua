@@ -22,4 +22,8 @@ function Event:emit(...)
     end
 end
 
+function Event:listen(callback)
+    table.insert(self.listeners, callback)
+end
+
 return Event

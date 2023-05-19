@@ -1,103 +1,139 @@
--- player.lua
+-- player_test.lua
 local Event = require('events')
-local lightning = require('basic_attacks.lightning')  -- Add this line
-local axeswing = require('basic_attacks.axeswing')  -- Add this line
 local attacks = require('basic_attacks.attacks')
-local visual_effects = require('visual_effects')
 local world = require('world')
 local town = require('town')
-local player = {}
 local LootDrop = require('loot')
 
-player.attackEvent = Event.new()
-player.enterTownEvent = Event.new()
-player.exitTownEvent = Event.new()
+local Player = {}
+Player.__index = Player
 
-function player:load()
-    self.x = math.floor(world.mapWidth * world.tileSize  / 2)
-    self.y = math.floor(world.mapHeight * world.tileSize / 2)
-    self.speed = 100
-    self.size = 32
-    self.health = 100
-    self.damageCooldown = 0
-	self.class = "default"  -- Default class
-	self.attackCooldown = 0
-	self.attackRange = 100
-	self.attackDamage = 10
-	self.inTown = 0
-	self.inventory = {} -- player's inventory
-	self.inventory = {
-        lootCount = {}  -- Add this line
+function Player:new()
+    local player = {
+        x = math.floor(world.mapWidth * world.tileSize  / 2),
+        y = math.floor(world.mapHeight * world.tileSize / 2),
+        speed = 100,
+        size = 32,
+        health = 100,
+        damageCooldown = 0,
+        class = "default",
+        attackCooldown = 0,
+        attackRange = 100,
+        attackDamage = 10,
+        inTown = false,
+        inventory = {
+            lootCount = {}
+        },
+        currentAttack = 'axeSwing',
+        animations = {
+            walking = {}
+        },
+        current_animation = nil,
+        current_frame = 1,
+        animation_speed = 1,
+        scale = 2,
+        attackEvent = Event.new(),
+        enterTownEvent = Event.new(),
+        exitTownEvent = Event.new(),
+		playerInteractionEvent = Event.new()
+
     }
-	self.currentAttack = 'axeSwing' -- Default attack
+
+    -- Load walking animation
+    for i = 0, 3 do
+        player.animations.walking[i] = love.graphics.newImage("wizard/run/m/wizzard_m_run_anim_f" .. i .. ".png")
+    end
+
+    -- Set the current animation to walking
+    player.current_animation = player.animations.walking
+
+    setmetatable(player, self)
+    return player
 end
 
-function player:update(dt)
-    if love.keyboard.isDown('w') then
-        self.y = self.y - self.speed * dt
+function Player:update(dt)
+    -- Movement, Damage, and Attack logic remains the same...
+	if love.keyboard.isDown('w') then
+		self.y = self.y - self.speed * dt
     end
     if love.keyboard.isDown('a') then
-        self.x = self.x - self.speed * dt
+		self.x = self.x - self.speed * dt
     end
     if love.keyboard.isDown('s') then
-        self.y = self.y + self.speed * dt
+		self.y = self.y + self.speed * dt
     end
     if love.keyboard.isDown('d') then
-        self.x = self.x + self.speed * dt
+		self.x = self.x + self.speed * dt
     end
+	
     self.damageCooldown = math.max(0, self.damageCooldown - dt)
 	
 	if self.attackCooldown > 0 then
-        self.attackCooldown = self.attackCooldown - dt
+		self.attackCooldown = self.attackCooldown - dt
     end
 	if love.mouse.isDown(1) and self.attackCooldown <= 0 then
 		self:performAttack(self.currentAttack)
-		end
-	if self.x >= town.x1 and self.y >= town.y1 and self.x <= town.x2 and self.y <= town.y2 then
-        self.enterTownEvent:emit(self.x, self.y)
-		self.inTown = 1
-	else
-		self.exitTownEvent:emit(self.x, self.y)
-		self.inTown = 0
+	end
+    -- Animation logic
+    self.current_frame = self.current_frame + self.animation_speed * dt
+    if self.current_frame > #self.current_animation then
+        self.current_frame = 1
     end
-	
-	for i = #lootDrops, 1, -1 do
+
+    -- Collision logic and Loot Pickup
+    if self.x >= town.x1 and self.y >= town.y1 and self.x <= town.x2 and self.y <= town.y2 then
+        self.enterTownEvent:emit(self.x, self.y)
+        self.inTown = true
+    else
+        self.exitTownEvent:emit(self.x, self.y)
+        self.inTown = false
+    end
+
+    for i = #lootDrops, 1, -1 do
         local lootDrop = lootDrops[i]
-        -- Simplified collision check, you might want to replace this with your own collision detection logic
         if math.abs(self.x - lootDrop.x) < self.size and math.abs(self.y - lootDrop.y) < self.size then
-            -- Add the loot item to the player's inventory
-            table.insert(self.inventory, lootDrop.item)
-			 -- Increase loot count
-            self.inventory.lootCount[lootDrop.item.name] = (self.inventory.lootCount[lootDrop.item.name] or 0) + 1  -- Add this line
-            -- Remove the loot drop from the world
+            self.inventory.lootCount[lootDrop.item.name] = (self.inventory.lootCount[lootDrop.item.name] or 0) + 1
             table.remove(lootDrops, i)
         end
     end
 end
 
-
-function player:draw()
+function Player:draw()
     -- Set color based on class
-    love.graphics.setColor(self.color)
+    love.graphics.setColor(player.color)
     love.graphics.rectangle('fill', self.x - self.size / 2, self.y - self.size / 2, self.size, self.size)
+
+    -- Set color to white
+    love.graphics.setColor(1, 1, 1)
+
+    -- draw current frame
+	local scale = 2
+    love.graphics.draw(self.current_animation[math.floor(self.current_frame)], self.x - (self.size * scale) / 2, self.y - (self.size * scale) / 2, 0, scale, scale)
+
 end
 
-function player:takeDamage(amount)
+function Player:takeDamage(amount)
     if self.damageCooldown <= 0 then
         self.health = self.health - amount
         self.damageCooldown = 0.5
-	end
+    end
 end
 
-function player:performAttack(attackType)
+function Player:performAttack(attackType)
     local attack = attacks[attackType]
     if attack and self.attackCooldown <= 0 then
         self.attackCooldown = attack.cooldown
         self.attackEvent:emit(attackType, self.x, self.y)
 
+        -- Additional attack-specific logic if needed
+        if attackType == "lightning" then
+            -- Handle lightning attack logic
+            -- ...
+        elseif attackType == "axeswing" then
+            -- Handle axeswing attack logic
+            -- ...
+        end
     end
 end
 
-return player
-
-
+return Player
