@@ -1,6 +1,5 @@
 -- world.lua
 local world = {}
-
 world.tileSize = 32
 world.mapWidth = 200  -- Adjust to your desired size
 world.mapHeight = 200  -- Adjust to your desired size
@@ -48,6 +47,7 @@ function world:load()
 		for dy = -5, 5 do
 			self.map[centerX + dx][centerY + dy] = 4  -- 4 represents gravel
 		end
+		
 end
 
 end

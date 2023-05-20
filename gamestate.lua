@@ -12,6 +12,10 @@ local ui = require('ui')
 local camera = require('camera')
 local loot = require('loot')
 local NPC = require('NPC')
+local EnemyCamp = require('enemy_camp')
+
+
+    
 
 local npc
 
@@ -21,6 +25,10 @@ function gamestate:load()
     enemies:load()
 	npc = NPC:new(100*32, 100*32, love.graphics.newImage("npc.png"))
 	bullets:load()
+	-- Store the enemy camp in the world
+    self.enemyCamp = EnemyCamp(world, 3000, 3000, 5, 5)
+
+
 
 	
 	-- Add game state for class selection

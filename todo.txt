@@ -1,4 +1,4 @@
-Create a Player class: This class will encapsulate all the player's behaviors. It should have methods to handle movement, collision, attacks, and any other behavior specific to the player. This way, any changes to the player's implementation won't directly affect the rest of the game.
+Create a Player class: This class will encapsulate all the player's behaviors. It should have methods to handle movement, collision, attacks, and any other behavior specific to the player. This way, any changes to the player's implementation won't directly affect the rest of the game. <COMPLETE>
 
 Use the Entity-Component-System (ECS) pattern: In an ECS, each game object (like the player, enemies, and loot drops) is an Entity. Components are data containers that you attach to Entities to give them properties (like position, health, sprite information), and Systems are the logic that operates on Entities with specific Components.
 

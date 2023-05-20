@@ -2,63 +2,62 @@
 
 local attacks = require('basic_attacks.attacks')
 local enemy_behaviors = require('enemy_behaviors')
-local world = require('world')
-local enemies = {}
 local LootDrop = require('loot')
+
+local enemies = {}
 enemies.list = {}
 
-function enemies:load()
-    self.size = 32  -- size of the enemy, also used as the hitbox size
-    self.spawnRate = 2
-    self.spawnTimer = 0
-    self.health = 20
-    self.speed = 50
-    self.spawnDistance = 200
-	self.damage = 10
-	-- Define enemy scaling properties
-    self.healthScaling = 1000 -- Increase enemy health by 10% per spawn
-    self.damageScaling = 1000 -- Increase enemy damage by 10% per spawn
-    self.speedScaling = 1000 -- Increase enemy speed by 10% per spawn
-	
-    self.current_frame = 1
-    self.animation_speed = 1
-    self.scale = 2
-	self.animations = {
-            walking = {}
-        }
-	self.current_animation = self.animations.walking
-	for i = 0, 3 do
-        enemies.animations.walking[i] = love.graphics.newImage("orc/run/orc_warrior_run_anim_f" .. i .. ".png")
-    end
-	
-    player.attackEvent:subscribe(function(attackName, x, y)
+-- Moved the properties and methods related to individual enemies to the Enemy class
+local function Enemy(x, y, size, health, damage, speed, animations)
+    local enemy = {
+        x = x,
+        y = y,
+		state = 'pursuit',
+        size = size,
+        health = health,
+        damage = damage,
+        speed = speed,
+        animations = animations or {},  -- If animations parameter is nil, use empty table
+        takeDamage = function(self, amount)
+            self.health = self.health - amount
+        end
+    }
+    enemy.current_animation = enemy.animations.walking
+    return enemy
+end
+
+
+-- Event subscription
+local function subscribeEvents()
+	player.attackEvent:subscribe(function(attackName, x, y)
         local attack = attacks[attackName]
         if attack then
-            self:handleAttack(attack, x, y)
+            enemies:handleAttack(attack, x, y)
         end
     end)
 	
 	player.enterTownEvent:subscribe(function(x, y)
-        for i, enemy in ipairs(self.list) do
+        for i, enemy in ipairs(enemies.list) do
             enemy.state = 'idle'
         end
     end)
 	
 	player.exitTownEvent:subscribe(function(x, y)
-        for i, enemy in ipairs(self.list) do
+        for i, enemy in ipairs(enemies.list) do
             enemy.state = 'pursuit'
         end
     end)
 end
 
+-- Spawn function
+function enemies:spawn(world, x, y)
+
+    local enemy = Enemy(x, y, self.size, self.health * (self.healthScaling / 1000), self.damage * (self.damageScaling / 1000), self.speed * (self.speedScaling / 1000), self.animations)
+
+    table.insert(self.list, enemy)
+end
 
 function enemies:update(dt)
-    -- Update spawn timer
-    self.spawnTimer = self.spawnTimer + dt
-    if self.spawnTimer >= self.spawnRate then
-        self.spawnTimer = 0
-        self:spawn()
-    end
 	
 	self.healthScaling = self.healthScaling + .1 -- Increase enemy health by 10% per spawn
     self.damageScaling = self.damageScaling + .1 -- Increase enemy damage by 10% per spawn
@@ -74,8 +73,7 @@ function enemies:update(dt)
     if self.current_frame > #self.current_animation then
         self.current_frame = 1
     end
-	
-    -- Remove dead enemies
+
    -- Remove dead enemies
 	for i = #self.list, 1, -1 do
 		if self.list[i].health <= 0 then
@@ -90,43 +88,15 @@ function enemies:update(dt)
 
 end
 
-
-function enemies:spawn()
-    -- Generate a random distance and angle
-    local distance = love.math.random(self.spawnDistance, self.spawnDistance + 100)  -- Distance will be between spawnDistance and spawnDistance + 100
-    local angle = love.math.random() * 2 * math.pi  -- Angle will be between 0 and 2*pi (full circle)
-
-    -- Convert polar to Cartesian coordinates
-    local x = player.x + distance * math.cos(angle)
-    local y = player.y + distance * math.sin(angle)
-	x = math.max(0, math.min(x, world.mapWidth))
-	y = math.max(0, math.min(y, world.mapHeight))
-
-
-    -- Create enemy
-    local enemy = {
-        x = x,
-        y = y,
-		state = 'pursuit',
-        size = self.size,
-        health = self.health * (self.healthScaling / 1000),
-        damage = self.damage * (self.damageScaling / 1000),
-        speed = self.speed * (self.speedScaling / 1000)
-    }
-    function enemy:takeDamage(amount)
-        self.health = self.health - amount
-    end
-    table.insert(self.list, enemy)
-end
-
-
-
 function enemies:draw()
     love.graphics.setColor(1, 0, 0)
     for i, enemy in ipairs(self.list) do
         love.graphics.rectangle('fill', enemy.x - self.size / 2, enemy.y - self.size / 2, self.size, self.size)
 		local scale = 2
-		love.graphics.draw(self.current_animation[math.floor(self.current_frame)], enemy.x - (self.size * scale) / 2, enemy.y - (self.size * scale) / 2, 0, scale, scale)
+		if self.current_animation and self.current_animation[math.floor(self.current_frame)] then
+			love.graphics.draw(self.current_animation[math.floor(self.current_frame)], enemy.x - (self.size * scale) / 2, enemy.y - (self.size * scale) / 2, 0, scale, scale)
+		end
+
     end
     love.graphics.setColor(1, 1, 1)
 	-- draw current frame
@@ -140,5 +110,29 @@ function enemies:handleAttack(attack, x, y)
     end
 end
 
+function enemies:load()
+    self.size = 32  
+    self.spawnRate = 2
+    self.spawnTimer = 0
+    self.health = 20
+    self.speed = 50
+    self.spawnDistance = 200
+	self.damage = 10
+	
+    self.healthScaling = 1000 
+    self.damageScaling = 1000
+    self.speedScaling = 1000
+	
+    self.current_frame = 1
+    self.animation_speed = 1
+    self.scale = 2
+	self.animations = {walking = {}}
+	self.current_animation = self.animations.walking
+	for i = 0, 3 do
+        enemies.animations.walking[i] = love.graphics.newImage("orc/run/orc_warrior_run_anim_f" .. i .. ".png")
+    end
+	
+    subscribeEvents()
+end
 
 return enemies
