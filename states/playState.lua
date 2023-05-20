@@ -10,7 +10,8 @@ local playState = {}
 local npc
 local ui = require('ui')
 local camera = require('camera')
-local loot = require('loot')
+local LootDrop = require('loot')
+
 local EnemyCamp = require('enemy_camp')
 
 function playState:load()
@@ -22,56 +23,65 @@ function playState:load()
     bullets:load()
     -- Store the enemy camp in the world
     self.enemyCamp = EnemyCamp(world, 3000, 3000, 5, 5)
+	self.enemyCamp = EnemyCamp(world, 3100, 3100, 5, 5)
 
     lootDrops = {}
-  roundTimer = 0
+    roundTimer = 0
+    shopItems = {
+        {name = "Sword", price = 100},
+        {name = "Shield", price = 150},
+        {name = "Potion", price = 50}
+    }
   
 end
 
 function playState:update(dt)
 	roundTimer = roundTimer + dt
+	
 	if player.health <= 0 then
 		self.currentState = gameoverState
 	end
+	
+	local screenWidth = love.graphics.getWidth()
+    local screenHeight = love.graphics.getHeight()
+	
 	player:update(dt)
-	camera.x = player.x - love.graphics.getWidth() / 2
-	camera.y = player.y - love.graphics.getHeight() / 2
+	camera.x = player.x - screenWidth / 2
+    camera.y = player.y - screenHeight / 2
 
-	-- Constrain the camera to the world boundaries
-	camera.x = math.max(0, math.min(camera.x, world.mapWidth * world.tileSize - love.graphics.getWidth()))
-	camera.y = math.max(0, math.min(camera.y, world.mapHeight * world.tileSize - love.graphics.getHeight()))
+    local mapWidthLimit = world.mapWidth * world.tileSize - screenWidth
+    local mapHeightLimit = world.mapHeight * world.tileSize - screenHeight
+	
+	camera.x = math.max(0, math.min(camera.x, mapWidthLimit))
+    camera.y = math.max(0, math.min(camera.y, mapHeightLimit))
+	
 	enemies:update(dt)
 	projectiles:update(dt, enemies)
 	npc:update(dt)
+	for _, lootDrop in ipairs(lootDrops) do
+        lootDrop:update(dt)
+    end
 	visual_effects:update(dt)
-	if player.health <= 0 then
-		self.currentState = gameoverState
-	end
 end
 
 function playState:draw()
   -- 'play' specific draw logic
+  	world:draw(camera)
 	love.graphics.push()
 	love.graphics.translate(-camera.x, -camera.y)
 	-- code for play state draw
-	world:draw()
 	player:draw()
 	enemies:draw()
 	bullets:draw()
 	npc:draw()
 
 	if npc.isShopOpen then  -- add this condition
-		shopItems = {
-		{name = "Sword", price = 100},
-		{name = "Shield", price = 150},
-		{name = "Potion", price = 50}
-	}
 		ui:drawShop(npc, shopItems)
 	end
 
-	for _, lootDrop in pairs(lootDrops) do
-		lootDrop:draw()
-	end
+	for _, lootDrop in ipairs(lootDrops) do
+        lootDrop:draw()
+    end
 	love.graphics.setColor(0, 0, 0)
 	visual_effects:draw()
 	ui:debug()

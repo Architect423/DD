@@ -11,7 +11,7 @@ local function EnemyCamp(world, x, y, width, height)
     }
 
      for i = 1, 5 do
-        enemies:spawn(world, x, y + i)
+        enemies:spawn(world, x, y + i*30)
 		print('spawning')
     end
 

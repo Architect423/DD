@@ -9,7 +9,33 @@ function LootDrop:new(x, y)
     obj.x = x
     obj.y = y
     obj.item = LootDrop:generateItem()
+    obj.animation = LootDrop:loadAnimation(obj.item)  -- Load the animation
+    obj.frame = 1  -- Current frame of the animation
+    obj.frameTime = 0  -- Time since the last frame change
     return obj
+end
+
+function LootDrop:loadAnimation(item)
+    local frames = {}
+    local i = 0
+    while true do
+        local frameName = 'coin/coin_anim_f' .. i .. '.png'
+        if love.filesystem.getInfo(frameName) then
+            frames[#frames + 1] = love.graphics.newImage(frameName)
+            i = i + 1
+        else
+            break
+        end
+    end
+    return frames
+end
+
+function LootDrop:update(dt)
+    self.frameTime = self.frameTime + dt
+    if self.frameTime >= 0.1 then  -- Change frames every 0.1 seconds
+        self.frame = self.frame % #self.animation + 1
+        self.frameTime = 0
+    end
 end
 
 function LootDrop:generateItem()
@@ -60,10 +86,7 @@ function LootDrop:drawShape(size)
 end
 
 function LootDrop:draw()
-    local size = 10  -- size of the shape
-    local outlineSize = size + 2  -- size of the outline
-    self:drawOutline(size, outlineSize)
-    self:drawShape(size)
+    love.graphics.draw(self.animation[self.frame], self.x, self.y, 0, 2, 2)
 end
 
 
