@@ -9,8 +9,8 @@ return {
   height = 200,
   tilewidth = 16,
   tileheight = 16,
-  nextlayerid = 10,
-  nextobjectid = 11,
+  nextlayerid = 11,
+  nextobjectid = 15,
   properties = {},
   tilesets = {
     {
@@ -817,6 +817,63 @@ return {
           rotation = 0,
           visible = true,
           properties = {}
+        },
+        {
+          id = 11,
+          name = "goblin_spawn_1",
+          type = "",
+          shape = "rectangle",
+          x = 1713.5,
+          y = 1317,
+          width = 123,
+          height = 126,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 12,
+          name = "goblin_spawn_1",
+          type = "",
+          shape = "rectangle",
+          x = 1787.5,
+          y = 1443,
+          width = 123,
+          height = 126,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        }
+      }
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 10,
+      name = "NPCs",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {
+        {
+          id = 14,
+          name = "VillageElder",
+          type = "",
+          shape = "rectangle",
+          x = 1304,
+          y = 1313,
+          width = 47,
+          height = 44,
+          rotation = 0,
+          visible = false,
+          properties = {
+            ["type"] = "elder"
+          }
         }
       }
     },
@@ -839,10 +896,10 @@ return {
           name = "",
           type = "",
           shape = "rectangle",
-          x = 1589,
-          y = 1257,
-          width = 35,
-          height = 364,
+          x = 1603,
+          y = 1263,
+          width = 10,
+          height = 349,
           rotation = 0,
           visible = true,
           properties = {}
@@ -853,9 +910,9 @@ return {
           type = "",
           shape = "rectangle",
           x = 1262,
-          y = 1252,
-          width = 326,
-          height = 30,
+          y = 1263,
+          width = 350,
+          height = 14,
           rotation = 0,
           visible = true,
           properties = {}
@@ -865,10 +922,10 @@ return {
           name = "",
           type = "",
           shape = "rectangle",
-          x = 1259,
-          y = 1282,
-          width = 27,
-          height = 341,
+          x = 1266,
+          y = 1262,
+          width = 12,
+          height = 349,
           rotation = 0,
           visible = true,
           properties = {}
@@ -878,10 +935,10 @@ return {
           name = "",
           type = "",
           shape = "rectangle",
-          x = 1287,
-          y = 1598,
-          width = 149,
-          height = 28,
+          x = 1267,
+          y = 1601,
+          width = 169,
+          height = 13,
           rotation = 0,
           visible = true,
           properties = {}
@@ -897,6 +954,19 @@ return {
           height = 29,
           rotation = 0,
           visible = false,
+          properties = {}
+        },
+        {
+          id = 13,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1488.5,
+          y = 1601.5,
+          width = 114,
+          height = 13,
+          rotation = 0,
+          visible = true,
           properties = {}
         }
       }

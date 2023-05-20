@@ -14,23 +14,26 @@ local LootDrop = require('loot')
 local LootManager = require('loot_manager')
 local lootManager
 
-local EnemyCamp = require('enemy_camp')
-
 function playState:load()
--- Set the current state to the menu state
+    -- Set the current state to the menu state
     world:load()
     _G.player = Player:new() 
     enemies:load()
+	
 	for _, enemySpawnPoint in ipairs(world.enemySpawnPoints) do
+		print('spawning enemies')
         enemies:spawn(enemySpawnPoint.x, enemySpawnPoint.y)
     end
-    npc = NPC:new(100*32, 100*32, love.graphics.newImage("npc.png"))
-    bullets:load()
-    -- Store the enemy camp in the world
-    for _, enemySpawnPoint in ipairs(world.enemySpawnPoints) do
-        enemies:spawn(enemySpawnPoint.x, enemySpawnPoint.y)
-    end
+	self.npcs = {}
 
+    for _, npcSpawnPoint in ipairs(world.npcSpawnPoints) do
+		print(npcSpawnPoint.x)
+		local npc = NPC:new(npcSpawnPoint.x, npcSpawnPoint.y, love.graphics.newImage("npc.png"))
+		table.insert(self.npcs, npc) -- Store NPCs in the npcs table
+	end
+
+
+    bullets:load()
     lootDrops = {}
     roundTimer = 0
     shopItems = {
@@ -38,15 +41,14 @@ function playState:load()
         {name = "Shield", price = 150},
         {name = "Potion", price = 50}
     }
-	lootManager = LootManager:new()
 
+	lootManager = LootManager:new()
 	-- Register a handler for the 'enemyDeath' event
 	enemies.enemyDeathEvent:subscribe(function(enemy)
 		lootManager:generate(enemy.x, enemy.y)
-		print('made loot')
 	end)
-
 end
+
 
 function playState:update(dt)
 	roundTimer = roundTimer + dt
@@ -70,7 +72,9 @@ function playState:update(dt)
 	
 	enemies:update(dt)
 	projectiles:update(dt, enemies)
-	npc:update(dt)
+	for _, npc in ipairs(self.npcs) do
+		npc:update(dt)
+	end
 	for _, lootDrop in ipairs(lootManager.lootDrops) do
         lootDrop:update(dt)
     end
@@ -94,11 +98,12 @@ function playState:draw()
 	player:draw()
 	enemies:draw()
 	bullets:draw()
-	npc:draw()
-
-	if npc.isShopOpen then  -- add this condition
-		ui:drawShop(npc, shopItems)
-	end
+	for _, npc in ipairs(self.npcs) do
+        npc:draw() -- This calls the draw function of each NPC
+		if npc.isShopOpen then  -- add this condition
+			ui:drawShop(npc, shopItems)
+		end
+    end
 
 	for _, lootDrop in ipairs(lootManager.lootDrops) do
         lootDrop:draw()

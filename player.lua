@@ -2,8 +2,7 @@
 local Event = require('events')
 local attacks = require('basic_attacks.attacks')
 local world = require('world')
-local town = require('town')
-
+local collisions = require('collisions')
 local Player = {}
 Player.__index = Player
 
@@ -51,46 +50,37 @@ function Player:new()
 end
 
 function Player:update(dt)
-    -- Movement, Damage, and Attack logic remains the same...
-	local new_x = self.x
-	local new_y = self.y
-	
-	if love.keyboard.isDown('w') then
-		new_y = self.y - self.speed * dt
-	end
-	if love.keyboard.isDown('a') then
-		new_x = self.x - self.speed * dt
-	end
-	if love.keyboard.isDown('s') then
-		new_y = self.y + self.speed * dt
-	end
-	if love.keyboard.isDown('d') then
-		new_x = self.x + self.speed * dt
-	end
-	
-		-- Check for collisions with walls
-	local collided = false
-	for _, wall in ipairs(world.walls) do	
-		print(wall.x)
-		print(wall.y)
-		if (new_x - self.size / 2 >= wall.x and new_y - self.size / 2 >= wall.y and
-			new_x - self.size / 2 <= wall.x + wall.width and new_y - self.size / 2 <= wall.y + wall.height) or
-		   (new_x + self.size / 2 >= wall.x and new_y + self.size / 2 >= wall.y and
-			new_x + self.size / 2 <= wall.x + wall.width and new_y + self.size / 2 <= wall.y + wall.height) or
-		   (new_x - self.size / 2 >= wall.x and new_y + self.size / 2 >= wall.y and
-			new_x - self.size / 2 <= wall.x + wall.width and new_y + self.size / 2 <= wall.y + wall.height) or
-		   (new_x + self.size / 2 >= wall.x and new_y - self.size / 2 >= wall.y and
-			new_x + self.size / 2 <= wall.x + wall.width and new_y - self.size / 2 <= wall.y + wall.height) then
-			collided = true
-			break
-		end
-	end
-		
-	-- Only update position if no collision
-	if not collided then
-		self.x = new_x
-		self.y = new_y
-	end
+     -- Movement, Damage, and Attack logic remains the same...
+    local new_x = self.x
+    local new_y = self.y
+    
+    if love.keyboard.isDown('w') then
+        new_y = self.y - self.speed * dt
+    end
+    if love.keyboard.isDown('a') then
+        new_x = self.x - self.speed * dt
+    end
+    if love.keyboard.isDown('s') then
+        new_y = self.y + self.speed * dt
+    end
+    if love.keyboard.isDown('d') then
+        new_x = self.x + self.speed * dt
+    end
+    
+    -- Check for collisions with walls
+    local collided = false
+    for _, wall in ipairs(world.walls) do    
+        if collisions.checkRectangleCollision(new_x - self.size / 2, new_y - self.size / 2, self.size, self.size, wall.x, wall.y, wall.width, wall.height) then
+            collided = true
+            break
+        end
+    end
+        
+    -- Only update position if no collision
+    if not collided then
+        self.x = new_x
+        self.y = new_y
+    end
 	
     self.damageCooldown = math.max(0, self.damageCooldown - dt)
 	
@@ -126,18 +116,20 @@ function Player:update(dt)
 end
 
 function Player:draw()
-    -- Set color based on class
-    love.graphics.setColor(player.color)
-    love.graphics.rectangle('fill', self.x - self.size / 2, self.y - self.size / 2, self.size, self.size)
-
-    -- Set color to white
-    love.graphics.setColor(1, 1, 1)
 
     -- draw current frame
-	local scale = 2
-    love.graphics.draw(self.current_animation[math.floor(self.current_frame)], self.x - (self.size * scale) / 2, self.y - (self.size * scale) / 2, 0, scale, scale)
-
+    local spriteWidth = self.current_animation[math.floor(self.current_frame)]:getWidth()
+    local spriteHeight = self.current_animation[math.floor(self.current_frame)]:getHeight()
+    love.graphics.draw(
+        self.current_animation[math.floor(self.current_frame)], 
+        self.x - (spriteWidth * self.scale) / 2, 
+        self.y - (spriteHeight * self.scale) / 2, 
+        0, 
+        self.scale, 
+        self.scale
+    )
 end
+
 
 function Player:takeDamage(amount)
     if self.damageCooldown <= 0 then
@@ -151,26 +143,20 @@ function Player:performAttack(attackType)
     if attack and self.attackCooldown <= 0 then
         self.attackCooldown = attack.cooldown
         self.attackEvent:emit(attackType, self.x, self.y)
-
-        -- Additional attack-specific logic if needed
-        if attackType == "lightning" then
-            -- Handle lightning attack logic
-            -- ...
-        elseif attackType == "axeswing" then
-            -- Handle axeswing attack logic
-            -- ...
-        end
     end
 end
 
 
+local collisions = require('collisions')
+
 function Player:collidesWithWall(x, y)
     for _, wall in ipairs(world.walls) do
-        if x >= wall.x and y >= wall.y and x <= wall.x + wall.width and y <= wall.y + wall.height then
+        if collisions.checkRectangleCollision(x, y, self.spriteWidth, self.spriteHeight, wall.x, wall.y, wall.width, wall.height) then
             return true
         end
     end
     return false
 end
+
 
 return Player

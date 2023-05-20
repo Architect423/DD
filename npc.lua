@@ -1,6 +1,5 @@
 local Event = require('events')
 local world = require('world')
-local town = require('town')
 local ui = require('ui')
 local NPC = {}
 NPC.__index = NPC

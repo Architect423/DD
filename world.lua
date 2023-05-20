@@ -8,6 +8,7 @@ world.mapHeight = 200  -- Adjust to your desired size
 world.townAreas = {}
 world.walls = {}
 world.map = {}
+world.npcSpawnPoints = {}
 world.enemySpawnPoints = {}  -- Changed from world.enemies
 
 
@@ -36,6 +37,15 @@ function world:load()
         for _, object in ipairs(enemyLayer.objects) do
             local spawnPoint = {x = object.x, y = object.y, type = object.type or "default"}
             table.insert(self.enemySpawnPoints, spawnPoint)
+        end
+    end
+	
+	-- Load NPCs
+    local npcsLayer = self.map.layers["NPCs"]
+    if npcsLayer then
+        for _, object in ipairs(npcsLayer.objects) do
+            local npcData = {x = object.x, y = object.y, type = object.type or "default", properties = object.properties}
+            table.insert(self.npcSpawnPoints, npcData)
         end
     end
 
