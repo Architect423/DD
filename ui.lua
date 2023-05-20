@@ -67,20 +67,24 @@ function ui:drawLootCount(player)
 end
 
 function ui:drawShop(npc, shopItems)
-    -- List shop items
     -- Calculate the shop's position to be next to the NPC
-	love.graphics.setColor(1, 1, 1)
     local shopX = npc.x + npc.size
     local shopY = npc.y
-	print(shopX)
-	print(shopY)
-	print(npc.x)
-	print(npc.y)
+
+    -- Calculate the height of the shop background based on the number of shop items
+    local shopHeight = 50 * #shopItems
+
+    -- Draw the shop background
+    love.graphics.setColor(0.2, 0.2, 0.2, 0.8) -- Set the background color
+    love.graphics.rectangle('fill', shopX, shopY, 250, shopHeight)
+
+    -- Reset color for text and buttons
+    love.graphics.setColor(1, 1, 1)
+
     -- List shop items
     for i, item in ipairs(shopItems) do
         local y = shopY + 50 * i
         love.graphics.print(item.name .. " - " .. item.price .. " gold", shopX, y)
-
         -- Draw a "Buy" button for each item
         love.graphics.rectangle('line', shopX + 200, y, 50, 20) -- Draw button outline
         love.graphics.printf("Buy", shopX + 200, y, 50, 'center')
@@ -101,6 +105,7 @@ function ui:drawShop(npc, shopItems)
         end
     end
 end
+
 
 
 return ui

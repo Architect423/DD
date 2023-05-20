@@ -13,22 +13,28 @@ function NPC:new(x, y, sprite)
         size = 32,
 		isShopOpen = false
     }
-
     setmetatable(npc, self)
     return npc
 end
 
 function NPC:update(dt)
-     -- Calculate distance to player
+    -- Calculate distance to player
     local distToPlayer = math.sqrt((player.x - self.x)^2 + (player.y - self.y)^2)
 
-      -- Check if player is within 100 units and if "e" is pressed
+    -- Check if player is within 100 units and if "e" is pressed
     if distToPlayer <= 100 and love.keyboard.isDown("e") then
-        self.isShopOpen = true
+        -- Check if the shop is already open
+        if not self.isShopOpen then
+            self.isShopOpen = true
+        end
     else
-        self.isShopOpen = false
+        -- Check if the shop is currently open and if any of the conditions to close it are met
+        if self.isShopOpen and (love.keyboard.isDown("e") or love.keyboard.isDown("escape") or love.keyboard.isDown("w", "a", "s", "d")) then
+            self.isShopOpen = false
+        end
     end
 end
+
 
 function NPC:draw()
     -- Draw the NPC sprite
