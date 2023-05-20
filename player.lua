@@ -3,14 +3,13 @@ local Event = require('events')
 local attacks = require('basic_attacks.attacks')
 local world = require('world')
 local town = require('town')
-local LootDrop = require('loot')
 
 local Player = {}
 Player.__index = Player
 
 function Player:new()
     local player = {
-        x = math.floor(world.mapWidth * world.tileSize  / 2),
+        x = math.floor((world.mapWidth * world.tileSize  / 2) + 100),
         y = math.floor(world.mapHeight * world.tileSize / 2),
         speed = 100,
         size = 32,
@@ -53,18 +52,45 @@ end
 
 function Player:update(dt)
     -- Movement, Damage, and Attack logic remains the same...
+	local new_x = self.x
+	local new_y = self.y
+	
 	if love.keyboard.isDown('w') then
-		self.y = self.y - self.speed * dt
-    end
-    if love.keyboard.isDown('a') then
-		self.x = self.x - self.speed * dt
-    end
-    if love.keyboard.isDown('s') then
-		self.y = self.y + self.speed * dt
-    end
-    if love.keyboard.isDown('d') then
-		self.x = self.x + self.speed * dt
-    end
+		new_y = self.y - self.speed * dt
+	end
+	if love.keyboard.isDown('a') then
+		new_x = self.x - self.speed * dt
+	end
+	if love.keyboard.isDown('s') then
+		new_y = self.y + self.speed * dt
+	end
+	if love.keyboard.isDown('d') then
+		new_x = self.x + self.speed * dt
+	end
+	
+		-- Check for collisions with walls
+	local collided = false
+	for _, wall in ipairs(world.walls) do	
+		print(wall.x)
+		print(wall.y)
+		if (new_x - self.size / 2 >= wall.x and new_y - self.size / 2 >= wall.y and
+			new_x - self.size / 2 <= wall.x + wall.width and new_y - self.size / 2 <= wall.y + wall.height) or
+		   (new_x + self.size / 2 >= wall.x and new_y + self.size / 2 >= wall.y and
+			new_x + self.size / 2 <= wall.x + wall.width and new_y + self.size / 2 <= wall.y + wall.height) or
+		   (new_x - self.size / 2 >= wall.x and new_y + self.size / 2 >= wall.y and
+			new_x - self.size / 2 <= wall.x + wall.width and new_y + self.size / 2 <= wall.y + wall.height) or
+		   (new_x + self.size / 2 >= wall.x and new_y - self.size / 2 >= wall.y and
+			new_x + self.size / 2 <= wall.x + wall.width and new_y - self.size / 2 <= wall.y + wall.height) then
+			collided = true
+			break
+		end
+	end
+		
+	-- Only update position if no collision
+	if not collided then
+		self.x = new_x
+		self.y = new_y
+	end
 	
     self.damageCooldown = math.max(0, self.damageCooldown - dt)
 	
@@ -80,21 +106,22 @@ function Player:update(dt)
         self.current_frame = 1
     end
 
-    -- Collision logic and Loot Pickup
-    if self.x >= town.x1 and self.y >= town.y1 and self.x <= town.x2 and self.y <= town.y2 then
-        self.enterTownEvent:emit(self.x, self.y)
-        self.inTown = true
-    else
-        self.exitTownEvent:emit(self.x, self.y)
-        self.inTown = false
+    -- Update collision logic
+    local isInTown = false
+    for _, townArea in ipairs(world.townAreas) do
+        if self.x >= townArea.x and self.y >= townArea.y and
+           self.x <= townArea.x + townArea.width and self.y <= townArea.y + townArea.height then
+            isInTown = true
+            break
+        end
     end
 
-    for i = #lootDrops, 1, -1 do
-        local lootDrop = lootDrops[i]
-        if math.abs(self.x - lootDrop.x) < self.size and math.abs(self.y - lootDrop.y) < self.size then
-            self.inventory.lootCount[lootDrop.item.name] = (self.inventory.lootCount[lootDrop.item.name] or 0) + 1
-            table.remove(lootDrops, i)
-        end
+    if isInTown and not self.inTown then
+        self.enterTownEvent:emit(self.x, self.y)
+        self.inTown = true
+    elseif not isInTown and self.inTown then
+        self.exitTownEvent:emit(self.x, self.y)
+        self.inTown = false
     end
 end
 
@@ -134,6 +161,16 @@ function Player:performAttack(attackType)
             -- ...
         end
     end
+end
+
+
+function Player:collidesWithWall(x, y)
+    for _, wall in ipairs(world.walls) do
+        if x >= wall.x and y >= wall.y and x <= wall.x + wall.width and y <= wall.y + wall.height then
+            return true
+        end
+    end
+    return false
 end
 
 return Player

@@ -37,26 +37,6 @@ function ui:drawHealthBar(player)
     love.graphics.rectangle('fill', 10, 10, player.health, 10)  -- Health bar
 end
 
-function ui:debug()
-    local gridInterval = 5  -- Adjust this value to change the frequency of grid labeling
-	
-	-- for x = 1, world.mapWidth do
-        -- for y = 1, world.mapHeight do
-            -- local tile = world.tiles[world.map[x][y]] 
-            -- if tile then
-                -- if x % gridInterval == 0 and y % gridInterval == 0 then
-                    -- love.graphics.setColor(0, 0, 0)  -- Set the text color to black
-                    -- local text = "(" .. x .. "," .. y .. ")"
-                    -- local textX = (x - 1) * world.tileSize
-                    -- local textY = (y - 1) * world.tileSize
-                    -- love.graphics.print(text, textX, textY)
-					-- end
-            -- end
-        -- end
-    -- end
-
-end
-
 function ui:drawLootCount(player)
     love.graphics.print("Loot count:", 10, 60)
     local i = 1

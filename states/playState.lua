@@ -11,6 +11,8 @@ local npc
 local ui = require('ui')
 local camera = require('camera')
 local LootDrop = require('loot')
+local LootManager = require('loot_manager')
+local lootManager
 
 local EnemyCamp = require('enemy_camp')
 
@@ -19,11 +21,15 @@ function playState:load()
     world:load()
     _G.player = Player:new() 
     enemies:load()
+	for _, enemySpawnPoint in ipairs(world.enemySpawnPoints) do
+        enemies:spawn(enemySpawnPoint.x, enemySpawnPoint.y)
+    end
     npc = NPC:new(100*32, 100*32, love.graphics.newImage("npc.png"))
     bullets:load()
     -- Store the enemy camp in the world
-    self.enemyCamp = EnemyCamp(world, 3000, 3000, 5, 5)
-	self.enemyCamp = EnemyCamp(world, 3100, 3100, 5, 5)
+    for _, enemySpawnPoint in ipairs(world.enemySpawnPoints) do
+        enemies:spawn(enemySpawnPoint.x, enemySpawnPoint.y)
+    end
 
     lootDrops = {}
     roundTimer = 0
@@ -32,7 +38,14 @@ function playState:load()
         {name = "Shield", price = 150},
         {name = "Potion", price = 50}
     }
-  
+	lootManager = LootManager:new()
+
+	-- Register a handler for the 'enemyDeath' event
+	enemies.enemyDeathEvent:subscribe(function(enemy)
+		lootManager:generate(enemy.x, enemy.y)
+		print('made loot')
+	end)
+
 end
 
 function playState:update(dt)
@@ -58,10 +71,18 @@ function playState:update(dt)
 	enemies:update(dt)
 	projectiles:update(dt, enemies)
 	npc:update(dt)
-	for _, lootDrop in ipairs(lootDrops) do
+	for _, lootDrop in ipairs(lootManager.lootDrops) do
         lootDrop:update(dt)
     end
 	visual_effects:update(dt)
+	
+	for i = #lootManager.lootDrops, 1, -1 do
+        local lootDrop = lootManager.lootDrops[i]
+        if math.abs(player.x - lootDrop.x) < player.size and math.abs(player.y - lootDrop.y) < player.size then
+            player.inventory.lootCount[lootDrop.item.name] = (player.inventory.lootCount[lootDrop.item.name] or 0) + 1
+            table.remove(lootManager.lootDrops, i)
+        end
+    end
 end
 
 function playState:draw()
@@ -79,12 +100,11 @@ function playState:draw()
 		ui:drawShop(npc, shopItems)
 	end
 
-	for _, lootDrop in ipairs(lootDrops) do
+	for _, lootDrop in ipairs(lootManager.lootDrops) do
         lootDrop:draw()
     end
 	love.graphics.setColor(0, 0, 0)
 	visual_effects:draw()
-	ui:debug()
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.pop()
 	ui:drawInGameUI(player, roundTimer)

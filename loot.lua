@@ -55,36 +55,6 @@ function LootDrop:generateItem()
     end
 end
 
-function LootDrop:drawOutline(size, outlineSize)
-    -- Draw black outline
-    love.graphics.setColor(0, 0, 0)  -- Black
-    if self.item.shape == 'triangle' then
-        love.graphics.polygon('line', 
-            self.x, self.y - outlineSize,  -- Top point
-            self.x - outlineSize, self.y + outlineSize,  -- Bottom left point
-            self.x + outlineSize, self.y + outlineSize)  -- Bottom right point
-    elseif self.item.shape == 'square' then
-        love.graphics.rectangle('line', self.x - outlineSize / 2, self.y - outlineSize / 2, outlineSize, outlineSize)
-    elseif self.item.shape == 'circle' then
-        love.graphics.circle('line', self.x, self.y, outlineSize)
-    end
-end
-
-function LootDrop:drawShape(size)
-    -- Assign color based on item
-    love.graphics.setColor(self.item.color)
-    if self.item.shape == 'triangle' then
-        love.graphics.polygon('fill', 
-            self.x, self.y - size,  -- Top point
-            self.x - size, self.y + size,  -- Bottom left point
-            self.x + size, self.y + size)  -- Bottom right point
-    elseif self.item.shape == 'square' then
-        love.graphics.rectangle('fill', self.x - size / 2, self.y - size / 2, size, size)
-    elseif self.item.shape == 'circle' then
-        love.graphics.circle('fill', self.x, self.y, size)
-    end
-end
-
 function LootDrop:draw()
     love.graphics.draw(self.animation[self.frame], self.x, self.y, 0, 2, 2)
 end

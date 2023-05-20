@@ -1,20 +1,11 @@
 -- main.lua
 love.graphics.setDefaultFilter('nearest', 'nearest')
 
-local world = require('world')
-local player = require('player')
-local enemies = require('enemies')
-local bullets = require('basic_attacks.bullets')
 local gamestate = require('gamestate')
-
 
 function love.load()
     gamestate:load()
 end
-
-local keyDelay = 0.2  -- Adjust this value to set the desired delay in seconds
-local keyTimer = 0
-local keyPressed = false
 
 function love.update(dt)
 	gamestate:update(dt)

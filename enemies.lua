@@ -1,11 +1,11 @@
 -- enemies.lua
-
 local attacks = require('basic_attacks.attacks')
 local enemy_behaviors = require('enemy_behaviors')
-local LootDrop = require('loot')
+local Event = require('events')
 
 local enemies = {}
 enemies.list = {}
+enemies.enemyDeathEvent = Event.new()
 
 -- Moved the properties and methods related to individual enemies to the Enemy class
 local function Enemy(x, y, size, health, damage, speed, animations)
@@ -18,7 +18,7 @@ local function Enemy(x, y, size, health, damage, speed, animations)
         damage = damage,
         speed = speed,
         animations = animations or {},  -- If animations parameter is nil, use empty table
-        takeDamage = function(self, amount)
+		takeDamage = function(self, amount)
             self.health = self.health - amount
         end
     }
@@ -50,7 +50,7 @@ local function subscribeEvents()
 end
 
 -- Spawn function
-function enemies:spawn(world, x, y)
+function enemies:spawn(x, y)
 
     local enemy = Enemy(x, y, self.size, self.health * (self.healthScaling / 1000), self.damage * (self.damageScaling / 1000), self.speed * (self.speedScaling / 1000), self.animations)
 
@@ -76,15 +76,13 @@ function enemies:update(dt)
 
    -- Remove dead enemies
 	for i = #self.list, 1, -1 do
-		if self.list[i].health <= 0 then
-			-- Generate a loot drop
-			local lootDrop = LootDrop:new(self.list[i].x, self.list[i].y)
-			-- Insert it into the global loot drops table
-			table.insert(lootDrops, lootDrop)
-			-- Remove the enemy from the list
-			table.remove(self.list, i)
-		end
-	end
+        if self.list[i].health <= 0 then
+            -- Dispatch enemy death event
+            self.enemyDeathEvent:emit(self.list[i]) -- Emit the event passing the enemy object
+            -- Remove the enemy from the list
+            table.remove(self.list, i)
+        end
+    end
 
 end
 
