@@ -1,9 +1,11 @@
 -- player_test.lua
 local Event = require('events')
-local attacks = require('basic_attacks.attacks')
 local world = require('world')
 local collisions = require('collisions')
 local Player = {}
+local ArrowAttack = require('attacks.arrow_attack')
+local Projectile = require('components.projectile') 
+
 Player.__index = Player
 
 function Player:new()
@@ -15,9 +17,8 @@ function Player:new()
         health = 100,
         damageCooldown = 0,
         class = "default",
-        attackCooldown = 0,
-        attackRange = 100,
-        attackDamage = 10,
+        attackCooldown = 2,
+		arrowAttack = ArrowAttack:new(self,'sprite.png'),
         inTown = false,
         inventory = {
             lootCount = {}
@@ -30,6 +31,20 @@ function Player:new()
         current_frame = 1,
         animation_speed = 1,
         scale = 2,
+		inputAttackMap = {
+            ['left-click'] = 'ArrowAttack',
+            ['right-click'] = 'swordSlash',
+            ['q'] = 'spellCast1',
+            ['e'] = 'spellCast2',
+            -- and so on...
+        },
+		attackCooldowns = {
+            ['ArrowAttack'] = 2,
+            ['swordSlash'] = 2,
+            ['spellCast1'] = 2,
+            ['spellCast2'] = 2,
+            -- and so on...
+        },
         attackEvent = Event.new(),
         enterTownEvent = Event.new(),
         exitTownEvent = Event.new(),
@@ -49,7 +64,7 @@ function Player:new()
     return player
 end
 
-function Player:update(dt)
+function Player:update(dt, camera)
      -- Movement, Damage, and Attack logic remains the same...
     local new_x = self.x
     local new_y = self.y
@@ -84,12 +99,23 @@ function Player:update(dt)
 	
     self.damageCooldown = math.max(0, self.damageCooldown - dt)
 	
-	if self.attackCooldown > 0 then
-		self.attackCooldown = self.attackCooldown - dt
+	 -- Update attack cooldowns
+    for attackType, cooldown in pairs(self.attackCooldowns) do
+        if cooldown > 0 then
+            self.attackCooldowns[attackType] = cooldown - dt
+        end
     end
-	if love.mouse.isDown(1) and self.attackCooldown <= 0 then
-		self:performAttack(self.currentAttack)
+
+		-- Check for attack inputs
+	for input, attackType in pairs(self.inputAttackMap) do
+		if self:isInputActive(input) then
+			if self.attackCooldowns[attackType] <= 0 then
+				self:performAttack(attackType, dt)
+				self.attackCooldowns[attackType] = self.attackCooldown -- Reset the attack cooldown to its specific time
+			end
+		end
 	end
+	
     -- Animation logic
     self.current_frame = self.current_frame + self.animation_speed * dt
     if self.current_frame > #self.current_animation then
@@ -113,6 +139,10 @@ function Player:update(dt)
         self.exitTownEvent:emit(self.x, self.y)
         self.inTown = false
     end
+	for _, proj in ipairs(Projectile.projectiles) do
+		proj:update(dt)
+	end
+
 end
 
 function Player:draw()
@@ -128,8 +158,11 @@ function Player:draw()
         self.scale, 
         self.scale
     )
-end
+	for _, proj in ipairs(Projectile.projectiles) do
+		proj:draw()
+	end
 
+end
 
 function Player:takeDamage(amount)
     if self.damageCooldown <= 0 then
@@ -138,16 +171,66 @@ function Player:takeDamage(amount)
     end
 end
 
-function Player:performAttack(attackType)
-    local attack = attacks[attackType]
-    if attack and self.attackCooldown <= 0 then
-        self.attackCooldown = attack.cooldown
-        self.attackEvent:emit(attackType, self.x, self.y)
+function Player:performAttack(attackType, dt)
+    if attackType == 'ArrowAttack' then
+        -- Execute the arrow attack
+		
+        local mouseX, mouseY = love.mouse.getPosition()
+		
+		-- Convert from window coordinates to world coordinates
+		mouseX = mouseX + camera.x
+		mouseY = mouseY + camera.y
+        local playerX, playerY = self.x, self.y
+
+        -- Calculate the direction vector
+        local direction = {
+            x = mouseX - playerX,
+            y = mouseY - playerY
+        }
+
+        -- Normalize the direction vector
+        local magnitude = math.sqrt(direction.x^2 + direction.y^2)
+        if magnitude > 0 then
+            direction.x = direction.x / magnitude
+            direction.y = direction.y / magnitude
+        end
+
+        local speed = 10
+        local damage = 5
+        self.arrowAttack:execute(self, direction, speed, damage)
+    elseif attackType == 'swordSlash' then
+        -- Execute the sword slash attack
+        -- Add your sword slash attack logic here
+    elseif attackType == 'spellCast1' then
+        -- Execute the first spell cast attack
+        -- Add your first spell cast attack logic here
+    elseif attackType == 'spellCast2' then
+        -- Execute the second spell cast attack
+        -- Add your second spell cast attack logic here
     end
 end
 
 
-local collisions = require('collisions')
+local mouseState = {
+    ['left-click'] = false,
+    ['right-click'] = false
+}
+
+function Player:isInputActive(input)
+    if input == 'left-click' then
+        local isPressed = love.mouse.isDown(1)
+        local wasPressed = mouseState['left-click']
+        mouseState['left-click'] = isPressed
+        return isPressed and not wasPressed
+    elseif input == 'right-click' then
+        local isPressed = love.mouse.isDown(2)
+        local wasPressed = mouseState['right-click']
+        mouseState['right-click'] = isPressed
+        return isPressed and not wasPressed
+    else
+        return love.keyboard.isDown(input)
+    end
+end
 
 function Player:collidesWithWall(x, y)
     for _, wall in ipairs(world.walls) do
@@ -157,6 +240,5 @@ function Player:collidesWithWall(x, y)
     end
     return false
 end
-
 
 return Player

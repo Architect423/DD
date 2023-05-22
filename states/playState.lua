@@ -2,9 +2,6 @@
 local world = require('world')
 local Player = require('player')
 local enemies = require('enemies')
-local bullets = require('basic_attacks.bullets')
-local visual_effects = require('visual_effects')
-local projectiles = require('projectiles')
 local NPC = require('NPC')
 local playState = {}
 local npc
@@ -14,14 +11,18 @@ local LootDrop = require('loot')
 local LootManager = require('loot_manager')
 local lootManager
 
+local quests_table = require('quests.quests_table')
+
+local gamestate = {}
+local quests = {}
+
 function playState:load()
     -- Set the current state to the menu state
     world:load()
-    _G.player = Player:new() 
+    player = Player:new() 
     enemies:load()
 	
 	for _, enemySpawnPoint in ipairs(world.enemySpawnPoints) do
-		print('spawning enemies')
         enemies:spawn(enemySpawnPoint.x, enemySpawnPoint.y)
     end
 	self.npcs = {}
@@ -31,9 +32,6 @@ function playState:load()
 		local npc = NPC:new(npcSpawnPoint.x, npcSpawnPoint.y, love.graphics.newImage("npc.png"))
 		table.insert(self.npcs, npc) -- Store NPCs in the npcs table
 	end
-
-
-    bullets:load()
     lootDrops = {}
     roundTimer = 0
     shopItems = {
@@ -41,6 +39,11 @@ function playState:load()
         {name = "Shield", price = 150},
         {name = "Potion", price = 50}
     }
+	
+	-- At the start of the game or when loading a save, create quest instances
+	for _, quest in ipairs(quests_table) do
+		table.insert(quests, quest)
+	end
 
 	lootManager = LootManager:new()
 	-- Register a handler for the 'enemyDeath' event
@@ -60,7 +63,7 @@ function playState:update(dt)
 	local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
 	
-	player:update(dt)
+	player:update(dt, camera)
 	camera.x = player.x - screenWidth / 2
     camera.y = player.y - screenHeight / 2
 
@@ -71,15 +74,22 @@ function playState:update(dt)
     camera.y = math.max(0, math.min(camera.y, mapHeightLimit))
 	
 	enemies:update(dt)
-	projectiles:update(dt, enemies)
 	for _, npc in ipairs(self.npcs) do
 		npc:update(dt)
 	end
 	for _, lootDrop in ipairs(lootManager.lootDrops) do
         lootDrop:update(dt)
     end
-	visual_effects:update(dt)
-	
+		
+	-- During game updates, check whether any quests can be assigned or completed
+	for _, quest in ipairs(quests) do
+		if quest.status == "Not Assigned" and quest:canAssign(player) then
+			quest:assign(player)
+		elseif quest.status == "Assigned" and quest:canComplete(player) then
+			quest:complete(player)
+		end
+	end
+
 	for i = #lootManager.lootDrops, 1, -1 do
         local lootDrop = lootManager.lootDrops[i]
         if math.abs(player.x - lootDrop.x) < player.size and math.abs(player.y - lootDrop.y) < player.size then
@@ -97,7 +107,6 @@ function playState:draw()
 	-- code for play state draw
 	player:draw()
 	enemies:draw()
-	bullets:draw()
 	for _, npc in ipairs(self.npcs) do
         npc:draw() -- This calls the draw function of each NPC
 		if npc.isShopOpen then  -- add this condition
@@ -108,9 +117,6 @@ function playState:draw()
 	for _, lootDrop in ipairs(lootManager.lootDrops) do
         lootDrop:draw()
     end
-	love.graphics.setColor(0, 0, 0)
-	visual_effects:draw()
-	love.graphics.setColor(0, 0, 0)
 	love.graphics.pop()
 	ui:drawInGameUI(player, roundTimer)
 	ui:drawHealthBar(player)

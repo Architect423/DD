@@ -1,5 +1,4 @@
 -- enemies.lua
-local attacks = require('basic_attacks.attacks')
 local enemy_behaviors = require('enemy_behaviors')
 local Event = require('events')
 local Enemy = require('enemy')  -- This is how you include the Enemy module
@@ -9,14 +8,7 @@ enemies.list = {}
 enemies.enemyDeathEvent = Event.new()
 
 -- Event subscription
-local function subscribeEvents()
-	player.attackEvent:subscribe(function(attackName, x, y)
-        local attack = attacks[attackName]
-        if attack then
-            enemies:handleAttack(attack, x, y)
-        end
-    end)
-	
+local function subscribeEvents()	
 	player.enterTownEvent:subscribe(function(x, y)
         for i, enemy in ipairs(enemies.list) do
             enemy.state = 'deaggro'
