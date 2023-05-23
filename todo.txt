@@ -1,13 +1,30 @@
-Encapsulate state logic into dedicated classes or modules: Your gamestate script is currently handling all game states ('play', 'menu', 'classSelect', 'gameover') logic in a single script. This is a violation of the Single Responsibility Principle and can quickly become unmanageable as your game complexity grows. Split each game state into its own separate module, e.g., 'playState', 'menuState', 'classSelectState', 'gameoverState', etc. Each of these modules should handle its own load, update and draw methods, and any specific logic.
+Separate Data from Logic: Right now, each attack is a combination of both data (like cooldown, range, damage) and logic (effect). It would be more in line with the data-driven philosophy to have the effect logic driven by the data itself.
 
-Player Class Selection Mechanism: Move the logic for class selection into a separate module like 'classSelector'. This module should handle logic for scrolling between classes and confirming selection. Such separation would help in adding or modifying class options easily without modifying the game state code.
+One way to do this might be to create a base Attack class that contains all the shared logic (like finding enemies in range), and then have the data define how each attack varies. For example, axeSwing might define that it affects all enemies in range, while lightningStrike could specify that it chains to a certain number of additional enemies within a certain radius.
 
-Camera Control: Extract the camera control logic (that is in update function now) into a separate module or class, called 'cameraController'. This module should take care of moving and constraining the camera, thus separating the concern from the game state.
+Consistent Interfaces: It would be beneficial to create a consistent interface for all attacks. For example, all attacks could have a perform function that takes the same arguments. This would allow you to simplify the code where you use these attacks, because you can rely on this consistent interface.
 
-Key Input Management: Input handling (the keyboard part in 'classSelect' state) could be made more modular by creating a separate 'inputController' module. It would handle all the keyboard inputs for your game, and then different modules (like 'classSelector') could check this 'inputController' to determine if an action needs to be taken.
+Avoiding Global Dependencies: Your attacks currently depend on global visual_effects and projectiles. Instead of requiring these at the top of the module, consider passing them as arguments to the effect functions. This makes your code easier to test and modify.
 
-Shop Item Logic: Similar to the class selection mechanism, you could abstract away the shop item logic into its own module 'shopManager'. It could manage available items, prices, and perhaps even player transactions.
+Generalizing Common Logic: A lot of the code within each effect function is duplicated, such as the calculation of distances and creation of visual effects. Consider creating helper functions for these, or integrating this functionality into the base Attack class mentioned above.
+function Attack:execute(x, y, enemies, visual_effects, projectiles)
+    -- common behavior here
+    local enemiesInRange = self:getEnemiesInRange(x, y, enemies)
 
-Global Variables: You are using a few global variables such as _G.player, classes, selectedClassIndex, and shopItems. This can lead to issues in larger codebases due to accidental mutation or collision. Instead, consider encapsulating these within their relevant modules or classes. If they need to be shared across modules, consider creating a 'gameData' module that can be required where needed.
+    self.effect(self, enemiesInRange, x, y, visual_effects, projectiles)
+end
 
-Redundant code: There's a redundancy in your update function, where you're checking twice if the player's health is less than or equal to zero to change the state to 'gameover'. This can be reduced to a single check.
+function Attack:getEnemiesInRange(x, y, enemies)
+    local enemiesInRange = {}
+    for _, enemy in ipairs(enemies.list) do
+        local dx = enemy.x - x
+        local dy = enemy.y - y
+        local distance = math.sqrt(dx * dx + dy * dy)
+        
+        -- Only affect enemies within the attack range
+        if distance <= self.range then
+            table.insert(enemiesInRange, enemy)
+        end
+    end
+    return enemiesInRange
+end

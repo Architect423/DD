@@ -7,16 +7,9 @@ local enemies = {}
 enemies.list = {}
 enemies.enemyDeathEvent = Event.new()
 
--- Event subscription
-local function subscribeEvents()	
-	player.enterTownEvent:subscribe(function(x, y)
-        for i, enemy in ipairs(enemies.list) do
-            enemy.state = 'deaggro'
-        end
-    end)
-	
-end
 
+
+-- Spawn function
 -- Spawn function
 function enemies:spawn(x, y)
     local enemy = Enemy.new(
@@ -29,10 +22,11 @@ function enemies:spawn(x, y)
     )
 
     table.insert(self.list, enemy)
+    return enemy
 end
 
 
-function enemies:update(dt)
+function enemies:update(dt, player)
 	
 	self.healthScaling = self.healthScaling + .1 -- Increase enemy health by 10% per spawn
     self.damageScaling = self.damageScaling + .1 -- Increase enemy damage by 10% per spawn
@@ -125,7 +119,6 @@ function enemies:load()
         self.animations.walking[i] = love.graphics.newImage("orc/run/orc_warrior_run_anim_f" .. i .. ".png")
     end
 	
-    subscribeEvents()
 end
 
 

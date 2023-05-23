@@ -4,7 +4,6 @@ local world = require('world')
 local collisions = require('collisions')
 local Player = {}
 local ArrowAttack = require('attacks.arrow_attack')
-local Projectile = require('components.projectile') 
 
 Player.__index = Player
 
@@ -63,8 +62,7 @@ function Player:new()
     setmetatable(player, self)
     return player
 end
-
-function Player:update(dt, camera)
+function Player:update(dt, camera, enemies)
      -- Movement, Damage, and Attack logic remains the same...
     local new_x = self.x
     local new_y = self.y
@@ -139,14 +137,11 @@ function Player:update(dt, camera)
         self.exitTownEvent:emit(self.x, self.y)
         self.inTown = false
     end
-	for _, proj in ipairs(Projectile.projectiles) do
-		proj:update(dt)
-	end
+	
 
 end
 
 function Player:draw()
-
     -- draw current frame
     local spriteWidth = self.current_animation[math.floor(self.current_frame)]:getWidth()
     local spriteHeight = self.current_animation[math.floor(self.current_frame)]:getHeight()
@@ -158,10 +153,6 @@ function Player:draw()
         self.scale, 
         self.scale
     )
-	for _, proj in ipairs(Projectile.projectiles) do
-		proj:draw()
-	end
-
 end
 
 function Player:takeDamage(amount)
@@ -197,7 +188,8 @@ function Player:performAttack(attackType, dt)
 
         local speed = 10
         local damage = 5
-        self.arrowAttack:execute(self, direction, speed, damage)
+        -- When ArrowAttack is executed:
+		self.arrowAttack:execute(self, direction, speed, damage, enemies)
     elseif attackType == 'swordSlash' then
         -- Execute the sword slash attack
         -- Add your sword slash attack logic here

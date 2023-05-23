@@ -14,7 +14,7 @@ function ProjectileComponent:execute(attackData)
 	self.direction = attackData.direction
 	self.speed = attackData.speed
 	self.sprite = attackData.sprite
-    local newProjectile = Projectile.new(self.attacker, self.speed, self.direction, self.sprite)
+    local newProjectile = Projectile.new(self.attacker, self.speed, self.direction, self.sprite, self.targets)
 end
 
 return ProjectileComponent

@@ -40,12 +40,7 @@ function classSelectState:update(dt, gamestate)
 
     if love.keyboard.isDown('up') then
 		 local selectedClass = classes[selectedClassIndex]
-		_G.player.class = selectedClass.name
-		_G.player.color = selectedClass.color  -- Set the player color
-		_G.player.currentAttack = selectedClass.basic_attack
 		 gamestate:changeState(gamestate.playState)
-		 print("Selected Class: " .. player.class)
-		 print("Selected Class Color: " .. selectedClass.color[1] .. ", " .. selectedClass.color[2] .. ", " .. selectedClass.color[3])
     end
   end
 

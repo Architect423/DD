@@ -16,7 +16,7 @@ function NPC:new(x, y, sprite)
     return npc
 end
 
-function NPC:update(dt)
+function NPC:update(dt, player)
     -- Calculate distance to player
     local distToPlayer = math.sqrt((player.x - self.x)^2 + (player.y - self.y)^2)
 

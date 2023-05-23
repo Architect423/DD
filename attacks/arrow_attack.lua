@@ -26,20 +26,32 @@ function ArrowAttack:addComponent(component)
   table.insert(self.components, component)
 end
 
-function ArrowAttack:execute(attacker, direction, speed, damage)
+function ArrowAttack:execute(attacker, direction, speed, damage, targets)
   local attackData = {
     attacker = attacker,
     direction = direction,
     speed = speed,
     damage = damage,
-    sprite = self.sprite
+    sprite = self.sprite,
+    targets = targets
   }
   
+  -- Retrieve the list of hit targets from the CollisionComponent
+  local hitTargets = {}
   for _, component in ipairs(self.components) do
-    component:execute(attackData)
+    if getmetatable(component).__index == CollisionComponent then
+      hitTargets = component:execute(attackData)
+    end
+  end
+
+  -- Execute other components only for the hit targets
+  attackData.targets = hitTargets
+  for _, component in ipairs(self.components) do
+    if getmetatable(component).__index ~= CollisionComponent then
+      component:execute(attackData)
+    end
   end
 end
-
 
 
 

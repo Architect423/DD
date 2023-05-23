@@ -9,6 +9,8 @@ local ui = require('ui')
 local camera = require('camera')
 local LootDrop = require('loot')
 local LootManager = require('loot_manager')
+local EntityManager = require('entity_manager')
+
 local lootManager
 
 local quests_table = require('quests.quests_table')
@@ -19,19 +21,8 @@ local quests = {}
 function playState:load()
     -- Set the current state to the menu state
     world:load()
-    player = Player:new() 
-    enemies:load()
-	
-	for _, enemySpawnPoint in ipairs(world.enemySpawnPoints) do
-        enemies:spawn(enemySpawnPoint.x, enemySpawnPoint.y)
-    end
-	self.npcs = {}
+    self.entityManager = EntityManager:load(world)
 
-    for _, npcSpawnPoint in ipairs(world.npcSpawnPoints) do
-		print(npcSpawnPoint.x)
-		local npc = NPC:new(npcSpawnPoint.x, npcSpawnPoint.y, love.graphics.newImage("npc.png"))
-		table.insert(self.npcs, npc) -- Store NPCs in the npcs table
-	end
     lootDrops = {}
     roundTimer = 0
     shopItems = {
@@ -39,12 +30,11 @@ function playState:load()
         {name = "Shield", price = 150},
         {name = "Potion", price = 50}
     }
-	
-	-- At the start of the game or when loading a save, create quest instances
-	for _, quest in ipairs(quests_table) do
-		table.insert(quests, quest)
-	end
-
+    
+    -- At the start of the game or when loading a save, create quest instances
+    for _, quest in ipairs(quests_table) do
+        table.insert(quests, quest)
+    end
 	lootManager = LootManager:new()
 	-- Register a handler for the 'enemyDeath' event
 	enemies.enemyDeathEvent:subscribe(function(enemy)
@@ -55,7 +45,8 @@ end
 
 function playState:update(dt)
 	roundTimer = roundTimer + dt
-	
+	local player = self.entityManager:getPlayer()
+	local npcs = self.entityManager:getNPCs()
 	if player.health <= 0 then
 		self.currentState = gameoverState
 	end
@@ -63,9 +54,10 @@ function playState:update(dt)
 	local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
 	
-	player:update(dt, camera)
+	player:update(dt, camera, enemies)
 	camera.x = player.x - screenWidth / 2
     camera.y = player.y - screenHeight / 2
+	EntityManager:update(dt)
 
     local mapWidthLimit = world.mapWidth * world.tileSize - screenWidth
     local mapHeightLimit = world.mapHeight * world.tileSize - screenHeight
@@ -73,9 +65,9 @@ function playState:update(dt)
 	camera.x = math.max(0, math.min(camera.x, mapWidthLimit))
     camera.y = math.max(0, math.min(camera.y, mapHeightLimit))
 	
-	enemies:update(dt)
-	for _, npc in ipairs(self.npcs) do
-		npc:update(dt)
+	enemies:update(dt, player)
+	for _, npc in ipairs(npcs) do
+		npc:update(dt, player)
 	end
 	for _, lootDrop in ipairs(lootManager.lootDrops) do
         lootDrop:update(dt)
@@ -100,14 +92,19 @@ function playState:update(dt)
 end
 
 function playState:draw()
+	-- Get the player from the EntityManager
+    local player = self.entityManager:getPlayer()
+	local npcs = self.entityManager:getNPCs()
   -- 'play' specific draw logic
   	world:draw(camera)
 	love.graphics.push()
 	love.graphics.translate(-camera.x, -camera.y)
 	-- code for play state draw
 	player:draw()
+	
+	EntityManager:draw()
 	enemies:draw()
-	for _, npc in ipairs(self.npcs) do
+	for _, npc in ipairs(npcs) do
         npc:draw() -- This calls the draw function of each NPC
 		if npc.isShopOpen then  -- add this condition
 			ui:drawShop(npc, shopItems)
