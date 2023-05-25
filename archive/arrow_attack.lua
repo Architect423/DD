@@ -47,7 +47,7 @@ function ArrowAttack:execute(attacker, direction, speed, damage, targets)
   -- Execute other components only for the hit targets
   attackData.targets = hitTargets
   for _, component in ipairs(self.components) do
-    if getmetatable(component).__index ~= CollisionComponent then
+    if getmetatable(component).__index == ProjectileComponent then
       component:execute(attackData)
     end
   end

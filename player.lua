@@ -3,10 +3,8 @@ local Event = require('events')
 local world = require('world')
 local collisions = require('collisions')
 local Player = {}
-local ArrowAttack = require('attacks.arrow_attack')
 
 Player.__index = Player
-
 function Player:new()
     local player = {
         x = math.floor((world.mapWidth * world.tileSize  / 2) + 100),
@@ -17,12 +15,10 @@ function Player:new()
         damageCooldown = 0,
         class = "default",
         attackCooldown = 2,
-		arrowAttack = ArrowAttack:new(self,'sprite.png'),
         inTown = false,
         inventory = {
             lootCount = {}
         },
-        currentAttack = 'axeSwing',
         animations = {
             walking = {}
         },
@@ -46,9 +42,7 @@ function Player:new()
         },
         attackEvent = Event.new(),
         enterTownEvent = Event.new(),
-        exitTownEvent = Event.new(),
-		playerInteractionEvent = Event.new()
-
+        exitTownEvent = Event.new()
     }
 
     -- Load walking animation
@@ -58,7 +52,7 @@ function Player:new()
 
     -- Set the current animation to walking
     player.current_animation = player.animations.walking
-
+	
     setmetatable(player, self)
     return player
 end
@@ -79,7 +73,7 @@ function Player:update(dt, camera, enemies)
     if love.keyboard.isDown('d') then
         new_x = self.x + self.speed * dt
     end
-    
+	self.attackData.targets = enemies.list
     -- Check for collisions with walls
     local collided = false
     for _, wall in ipairs(world.walls) do    
@@ -108,12 +102,38 @@ function Player:update(dt, camera, enemies)
 	for input, attackType in pairs(self.inputAttackMap) do
 		if self:isInputActive(input) then
 			if self.attackCooldowns[attackType] <= 0 then
-				self:performAttack(attackType, dt)
+				self:performAttack(attackType, dt, enemies)
 				self.attackCooldowns[attackType] = self.attackCooldown -- Reset the attack cooldown to its specific time
 			end
 		end
 	end
+
+	-- Execute the arrow attack
 	
+	local mouseX, mouseY = love.mouse.getPosition()
+	
+	-- Convert from window coordinates to world coordinates
+	mouseX = mouseX + camera.x
+	mouseY = mouseY + camera.y
+	local playerX, playerY = self.x, self.y
+
+	-- Calculate the direction vector
+	local direction = {
+		x = mouseX - playerX,
+		y = mouseY - playerY
+	}
+
+	-- Normalize the direction vector
+	local magnitude = math.sqrt(direction.x^2 + direction.y^2)
+	if magnitude > 0 then
+		direction.x = direction.x / magnitude
+		direction.y = direction.y / magnitude
+	end
+
+	self.attackData.speed = 40
+	self.attackData.damage = 5
+	self.attackData.direction = direction
+
     -- Animation logic
     self.current_frame = self.current_frame + self.animation_speed * dt
     if self.current_frame > #self.current_animation then
@@ -138,6 +158,7 @@ function Player:update(dt, camera, enemies)
         self.inTown = false
     end
 	
+--
 
 end
 
@@ -162,44 +183,8 @@ function Player:takeDamage(amount)
     end
 end
 
-function Player:performAttack(attackType, dt)
-    if attackType == 'ArrowAttack' then
-        -- Execute the arrow attack
-		
-        local mouseX, mouseY = love.mouse.getPosition()
-		
-		-- Convert from window coordinates to world coordinates
-		mouseX = mouseX + camera.x
-		mouseY = mouseY + camera.y
-        local playerX, playerY = self.x, self.y
-
-        -- Calculate the direction vector
-        local direction = {
-            x = mouseX - playerX,
-            y = mouseY - playerY
-        }
-
-        -- Normalize the direction vector
-        local magnitude = math.sqrt(direction.x^2 + direction.y^2)
-        if magnitude > 0 then
-            direction.x = direction.x / magnitude
-            direction.y = direction.y / magnitude
-        end
-
-        local speed = 10
-        local damage = 5
-        -- When ArrowAttack is executed:
-		self.arrowAttack:execute(self, direction, speed, damage, enemies)
-    elseif attackType == 'swordSlash' then
-        -- Execute the sword slash attack
-        -- Add your sword slash attack logic here
-    elseif attackType == 'spellCast1' then
-        -- Execute the first spell cast attack
-        -- Add your first spell cast attack logic here
-    elseif attackType == 'spellCast2' then
-        -- Execute the second spell cast attack
-        -- Add your second spell cast attack logic here
-    end
+function Player:performAttack(attackType, dt, enemies)
+   self.attackEvent:emit(self.attackData)
 end
 
 

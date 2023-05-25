@@ -17,6 +17,8 @@ function Projectile.new(attacker, speed, direction, sprite, targets)
     self.direction = direction
     self.sprite = sprite
 	self.targets = targets
+	self.startX = attacker.x
+	self.startY = attacker.y
     -- When a projectile is created, add it to the list
     table.insert(Projectile.projectiles, self)
     return self
@@ -32,16 +34,11 @@ function Projectile:remove()
 end
 
 
-function Projectile:update(dt, hitTargets)
+function Projectile:update(dt)
     -- update the projectile's position based on its speed and direction
     self.x = self.x + self.direction.x * self.speed * dt
     self.y = self.y + self.direction.y * self.speed * dt
 
-    -- If the projectile hits a target, remove the projectile
-    if #hitTargets > 0 then
-		print('hit')
-        self:remove()
-    end
 	
 end
 
@@ -49,6 +46,12 @@ function Projectile:draw()
     -- draw the projectile's sprite at its current position
     love.graphics.draw(self.sprite, self.x, self.y)
 	
+end
+
+function Projectile:distanceTraveled()
+    local dx = self.x - self.startX
+    local dy = self.y - self.startY
+    return math.sqrt(dx^2 + dy^2)
 end
 
 return Projectile
